@@ -117,7 +117,7 @@ of graph names.
 A concrete example of a context association can be found below:
 
 ```turtle
-@prefix ca: <https://w3id.org/contextassociation#>;
+@prefix ca: <https://w3id.org/contextassociations#>;
 
 <context_information> :targets _:graph;
 
@@ -171,7 +171,7 @@ that references the target graphs using the
 `ca:includes` predicate.
 
 ```turtle
-@prefix ca: <https://w3id.org/contextassociation#>.
+@prefix ca: <https://w3id.org/contextassociations#>.
 
 <Context> <targets> _:graphUnion;
 

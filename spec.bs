@@ -1,6 +1,6 @@
 <pre class='metadata'>
-Title: RDF Context Association
-Shortname: RDF Context Association
+Title: RDF Context Associations
+Shortname: RDF Context Associations
 Warning: Not Ready
 Level: none
 Status: LD
@@ -22,7 +22,7 @@ Issue: define namespace `ca` as `https://w3id.org/contextassociations#`,
 Issue: discuss naming over the whole document!
 
 
-`RDF Context Association` is a modeling approach to define relations to a set or a collection of sets of RDF statements 
+`RDF Context Associations` is a modeling approach to define relations to a set or a collection of sets of RDF statements 
 that remains unambiguous under storage, merging and processing operations in the RDF stack.
 As many specification for policies, provenance and signature do not provide specific semantics in RDF
 in how to process their associated sets of statements, as these are abstracted as a URI, 
@@ -68,7 +68,7 @@ Issue: Is this a MAY or a MUST? Do things break if this is not explicitly specif
 
 <figure id="my-code" class="listing">
 ```turtle
-@prefix ca: <https://w3id.org/contextassociation#>;
+@prefix ca: <https://w3id.org/contextassociations#>;
 _:graphName { :a :b :c . }
 _:graphName a ca:GraphIdentifier .
 ```
@@ -150,7 +150,7 @@ as an entity of the type `ca:GraphUnion`, that includes a set of graphs
 using the `ca:incudes` predicate.
 
 ```turtle
-@prefix ca: <https://w3id.org/contextassociation#>.
+@prefix ca: <https://w3id.org/contextassociations#>.
 @prefix : <http://example.org/ns>.
 
 _:signature :targets _:graphUnion;

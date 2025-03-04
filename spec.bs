@@ -1,6 +1,6 @@
 <pre class='metadata'>
-Title: RDF Context Associations 
-Shortname: RDF Context Associations
+Title: RDF Context Association
+Shortname: RDF Context Association
 Warning: Not Ready
 Level: none
 Status: LD
@@ -8,7 +8,8 @@ Repository: KNowledgeOnWebScale/rdf-context-associations
 URL: https://knowledgeonwebscale.github.io/rdf-context-associations/
 Editor: Ruben Dedecker, [IDLab - Ghent University](https://knows.idlab.ugent.be), ruben.dedecker@ugent.be
 Editor: Pieter Colpaert, https://pietercolpaert.be
-Abstract: This specification describes the definition of general context associations in RDF using RDF graphs
+Abstract: The RDF Context Association specification provides instructions for clients to interpret associations of contextual data to a closed set of target statements in RDF. It defines how closed sets of statements can be modeled in RDF as Named Graphs with Blank Node name identifiers (Blank Node Graphs) and the modeling of sets of Blank Node Graphs that can be interpreted as a single closed set of quad statements.
+
 Markup Shorthands: markdown yes, css no
 </pre>
 
@@ -20,160 +21,139 @@ Issue: define namespace `ca` as `https://w3id.org/contextassociation#`,
 
 Issue: discuss naming over the whole document!
 
-<!-- Why do we need context on the Web -->
-To define trust flow for data on the Web,
-we need a modeling basis when representing 
-contextual information about sets of statements
-when exchanging, storing and processing these
-statements throughout the Web ecosystem. 
 
-This contextual information forms a basis on 
-which decisions can be taken for trustworthyness
-of information, appropriate or allowed integration
-of the information, and many different use-cases that
-transcend the raw contents of information exchange.
+`RDF Context Association` is a modeling approach to define relations to a set or a collection of sets of RDF statements 
+that remains unambiguous under storage, merging and processing operations in the RDF stack.
+As many specification for policies, provenance and signature do not provide specific semantics in RDF
+in how to process their associated sets of statements, as these are abstracted as a URI, 
+they do not provide a stable basis for building Semantic Web stacks that incorporate the contextual
+information that is present throughout networks.
 
-<!-- We need to be able to describe things about sets of RDF statements -->
-To model such exchanges of data with the association
-of contextual information using RDF, an association model
-needs to be provided that can support the requirements 
-for (i) unambiguity of reference, (ii) referencing of
-mutliple distinct sets of statements, (ii) restriction 
-of association models to RDF for reuse of RDF stacks 
-and (iv) integration of arbitrary RDF 1.1 data.
+This specification aims to define a modeling approach that follows a set of rules that enables the 
+modeling of associations of contextual information with unambiguous sets of target statements that
+remains unambiguous throughout the network  when exchanging, storing and processing the data. 
+
+The requirements for a succesful model are 
+(i) the unambiguity of a referenced set of statements, 
+(ii) the referencing of mutliple distinct sets of statements as a union, 
+(iii) the restriction the modeling approach to RDF 1.1 and 
+(iv) the ability to model contextual information over any set of existing RDF 1.1 data including quads.
+
+The base URI for RDF Context Association is https://w3id.org/ca#, and the preferred prefix is `ca`:. Other prefixes are used following [prefix.cc](prefix.cc).
 
 Blank Node Graphs {#blank_node_graphs}
 ======================================
 
-There are three main approaches to defining statements 
-about (sets of) statements in RDF:
-reification, named graphs and triple terms / rdf-star.
-As Named Graphs are natively supported in the RDF 1.1 
-specification and tooling, as well as having the ability 
-to reference graphs of RDF statements instead of individual statements, 
-they are the obvious candidate. 
+The basis of the Context Association model in RDF is the
+use of Named Graphs to define sets of statements that
+can be targeted. 
+However, to make the interpretation of these context associations
+consistent and unambiguous throughout the network, both the semantic
+interpretation and syntactic expression of these Named Graphs need to 
+be defined.
 
-To define associations of context information to sets of 
-RDF statements in the form of Named Graphs however,
-two problem areas have to be addressed.
-
-## Defining concrete semantics
-
+## Semantic interpretation of Named Graphs
 <!-- we need to enforce a specific interpretation -->
-Because the RDF specification does not define concrete 
-semantics for the name identifier of a Named Graph, stating that: 
-[the name value of Named Graphs may denote something different than the graph it identifies](https://www.w3.org/TR/rdf12-semantics/#unions_merges:~:text=For%20example%2C%20an%20IRI%20used%20as%20a%20graph%20name%20identifying%20a%20named%20graph%20in%20an%20RDF%20dataset%20may%20denote%20something%20different%20from%20the%20graph%20it%20identifies.).
-Because of this lack of semantic interpretation of both the name 
-identifier and the graph of Named Graph in RDF, their use for
-the modeling of context associations needs to include a concrete
-semantic interpetation.
+Where the DF 1.1 specification does not define a concrete 
+semantic interpretation of Named Graphs, the modeling of 
+Context Associations requires that: 
+(i) the name identifier of a Named Graph in the target of 
+a context association MUST serve as the reference for its
+associated RDF Graph in the Named Graph pair.
 
-Defining context association relies on the interpetation that
-(i) the name identifier of a Named Graph in RDF references
-its associated Graph, as this allows contextual information 
-to be defined over the contained statements in the graph.
-Additionally (ii) the interpretation that the statements contained
-in the associated graph are asserted at the level of the graph, 
-and not in the local RDF scope (note that this does not influence
-blank node coreferencing, which is bound to the local RDF scope). 
-This is important for example when evaluating signatures for 
-trustworthyness of data to not entail unwated additions from
-the signature contents before its trustworthyness can be evaluated.
+This MUST be expressed explicitly by defining the the RDF type
+`ca:GraphIdentifier` on the target graph name identifier.
 
-Issue: check the semantics defined above for trouble!
+Issue: Is this a MAY or a MUST? Do things break if this is not explicitly specified?
 
-To alert consumers of this interpretation, a context association 
-targeting a set of statements defined in a graph `A`
-MUST define this graph with the `rdf:type` of `ca:GraphReference`. 
-Any relation that references an identifier with associated type 
-`ca:GraphReference` MUST be interpreted as a referencing the 
-associated RDF Graph defined by the Named Graph corresponding
-to that identifier.
-
-
-## Enforcing Blank Node Identifiers for Named Graphs
-
-<!-- 2. we need to enforce unambiguity - by restricting to the local scope to achieve graph closure -->
-The RDF specification defines that when merging RDF data from multiple sources,
-their contained Named Graphs with identical name identifiers must be merged
-according to either an RDF Merge or Union operation.
-As requirement (i) for the modeling of context associations is that they 
-remain unambiguous, this is undesired behavior, which makes Named Node
-identifiers unpractical if their uniqueness cannot be guaranteed.
-
-Issue: cite open world assumption? -> [Found this link](https://www.w3.org/TR/rdf-mt/#:~:text=RDF%20is%20an%20assertional%20logic%2C%20in%20which%20each%20triple%20expresses%20a%20simple%20proposition.%20This%20imposes%20a%20fairly%20strict%20monotonic%20discipline%20on%20the%20language%2C%20so%20that%20it%20cannot%20express%20closed%2Dworld%20assumptions%2C%20local%20default%20preferences%2C%20and%20several%20other%20commonly%20used%20non%2Dmonotonic%20constructs.)
-
-To guarantee the uniqueness of name identifiers when referencing a set of statements using Named Graphs, 
-the use of Blank Node identifiers ensures no name identifier clashes can occur, 
-as blank nodes are contained to the local RDF scope and the merging of RDF data 
-from multiple sources requires relabeling of all Blank Node identifiers.
-In cases where these graphs still require referencability from outside the local
-scope, the use of Skolemized IRIs is advised to ensure unique generation of 
-graph names, and the pre-processing of incoming data is advised to prevent clashing
-of graph names.
-
-## Example
-
-A concrete example of a context association can be found below:
-
+<figure id="my-code" class="listing">
 ```turtle
 @prefix ca: <https://w3id.org/contextassociation#>;
-
-<context_information> :targets _:graph;
-
-_:graph { 
-    :a :b :c .
-    :x :y :z .
-}
-
-_:graph a ca:GraphReference
+_:graphName { :a :b :c . }
+_:graphName a ca:GraphIdentifier .
 ```
+<figcaption markdown="block">
+Defining a Named Graph name value as a Graph Identifier, 
+indicating that all references to that identifier reference
+the set of triples contained in the associated graph.
+</figcaption>
+</figure>
 
-Processing a target identifier `G` with an associated type `ca:GraphReference`
-MUST be processed as targeting `the set of quads in the local processing scope
-for which the graph term of the quad is G`.
+The definition of the class `ca:GraphIdentifier` on an identifier
+that is NOT used as a graph name SHOULD be considered as an inconsistency.
 
-The `<context_information>` above is interpreted as targeting the quads
-```turtle
-:a :b :c _:graph .
-:x :y :z _:graph .
-```
+<!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
+<!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
+<!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
+
+Issue: Should it?
+
+With regards to the semantic interpretation of the trust value of 
+the triple statements contained by the RDF Graph of a Named Graph,
+we make no claim as to how these should be enforced. 
+A sensible default however is to NOT evaluate the Graph contents
+of a referenced Named Graph before the associated contextual 
+information has been evaluated, as these might help strategize the
+interpretation of the referenced graph content.
 
 
+Issue: Either we do the above and say nothing explicitly, as nothing
+is specced, otherwise we would need an RDF profile to indicate interpretation.\
+Such a profile might be able to alleviate other things such as the explicit GraphIdentifier class however.
+
+<!-- 
+To alert consumers of this interpretation, a context association 
+targeting a set of statements defined in a graph `A`
+MUST define this graph with the `rdf:type` of `ca:GraphIdentifier`. 
+Any relation that references an identifier with associated type 
+`ca:GraphIdentifier` MUST be interpreted as a referencing the 
+associated RDF Graph defined by the Named Graph corresponding
+to that identifier. -->
+
+
+## Preventing ambiguity using Blank Node Graphs
+
+<!-- 2. we need to enforce unambiguity - by restricting to the local scope to achieve graph closure -->
+Merging RDF data from different sources that include Named Graphs, 
+the RDF specification defines that graphs sharing an identical name value
+must be merged using the `merge` or `union` operation of their RDF Graphs.
+To prevent unwanted merging of context associations when merging data,
+a guarantee is required that the graph name values will never clash.
+
+<!-- open world assumption? -> [Found this link](https://www.w3.org/TR/rdf-mt/#:~:text=RDF%20is%20an%20assertional%20logic%2C%20in%20which%20each%20triple%20expresses%20a%20simple%20proposition.%20This%20imposes%20a%20fairly%20strict%20monotonic%20discipline%20on%20the%20language%2C%20so%20that%20it%20cannot%20express%20closed%2Dworld%20assumptions%2C%20local%20default%20preferences%2C%20and%20several%20other%20commonly%20used%20non%2Dmonotonic%20constructs.) -->
+
+Issue: is blank nodes a SHOULD or a MUST (if you can guarantee URI uniqueness?)
+
+The use of Blank Node identifiers for the name value of any Named Graphs
+prevents the occurrence of multiple Named Graphs with the same name value.
+As Blank Node identifiers MUST be relabeled when merging RDF from different sources, 
+this guarantees the uniqueness of the name identifiers.
+If extenral referencability of the Named Graphs is required, 
+the use of [Skolemized identifiers](https://www.w3.org/TR/rdf11-mt/#skolemization-informative)
+guarantees uniqueness in the generation of the name identifier, 
+while retaining referencability outside the local scope.
+
+Issue: Do we test for the precense of named node identifiers as graph identifiers? 
 
 Multiple Graph Associations {#multiple_graphs}
 ==============================================
 
-Certain use-cases require the association of 
-multiple sets of statements to a definition of
-contextual information. 
-This can be interpreted as expressing of contextual information 
-over a target conjunction of sets of statements of the form
-`context(Graph1 ∩ Graph2)`. 
+Issue: Should the includes be a list for ensuring closure? 
+E.g. if we lose a targets link, the list breaks and we can see the policy is incomplete?
 
-Depending on the semantic interpretation of the contextual information 
-and the target predicate, we either can interpret this definition
-as being equal to `origin(set1 ∩ set2) = origin(set1) ∩ origin(set2)` 
-as is in the case of defining the origin of two sets of statements.
-
-Issue: can we find practical cases of the underlying requirement?
-
-However in cases such as the definition of signatures, 
-this equality does not hold as 
-`signature(set1 ∩ set2) ≠ signature(set1) ∩ signature(set2)`.
-Similarly, expressing negative predicates can incur similar inequalities 
-when processing the target references separately compared to as a union.
-
-When targeting a union of Named Graphs,
-the union MUST be defined as an entity defined by a 
-Blank Node identifier of type `ca:GraphUnion`
-that references the target graphs using the 
-`ca:includes` predicate.
+For use-cases such as defining signatures over multiple heterogenous 
+sets of statements, the expression of a signature over a conjunction
+of Named Graphs is NOT the same as defining the signature over the individual graphs.
+(`sign (graph1 ∩ graph2) ≠ `sign(Graph1) ∩ sign(Graph2)`).
+For these cases, we express the union of the target set of Named Graphs
+as an entity of the type `ca:GraphUnion`, that includes a set of graphs 
+using the `ca:incudes` predicate.
 
 ```turtle
 @prefix ca: <https://w3id.org/contextassociation#>.
+@prefix : <http://example.org/ns>.
 
-<Context> <targets> _:graphUnion;
+_:signature :targets _:graphUnion;
 
 _:graphUnion a ca:GraphUnion;
     ca:includes _:graph1, _:graph2.
@@ -181,11 +161,11 @@ _:graphUnion a ca:GraphUnion;
 _:graph1 { ... }
 _:graph2 { ... }
 
-_:graph1 a ca:GraphReference
-_:graph2 a ca:GraphReference
+_:graph1 a ca:GraphIdentifier
+_:graph2 a ca:GraphIdentifier
 ```
 
-Issue: Should the target include or not include the `graphUnion entity quads`?
+Issue: When targeting a GraphUnion, can we specify that the GraphUnion entity itself should be disregarded when evaluating the quads to e.g. sign?
 
 Processing a target entity of type `ca:GraphUnion`, 
 with `S` the set of referenced graphs using the 
@@ -194,25 +174,26 @@ the referenced set of quads as:
 `the set of quads in the local RDF scope for which 
 the quad Graph Term is contained in S`.
 
+Issue: testing compliance - how?
+
 
 Including Source Quads {#quads}
 ===============================
 
-Issue: Todo: this section
+Including source data when defining contextual information, 
+the named graphs in the source data will need to be processed
+to a Blank Node Graph format that guarantees uniqueness of 
+the Named Graph name identifier.
 
-Defining context associations to target data 
-that already makes use of named graphs requires
-converting the target a conversion step.
+In cases where uniqueness can be guaranteed for the identifiers
+of used Named Graphs, the graphs present MAY be reused. In other
+cases, or for external exchange of statements, a Named Graph with
+a Blank Node name identifier SHOULD be created to contain the 
+exchanged statements.
 
-
-requires a preprocessing step 
- may run into the problem of local data already using
-Named Graphs for modeling internal data.
-As the goal of context associations is to explicitly model contextual information about sets
-of statements that can be interpreted and integrated other actors, 
-
-As context associations require the use of locally defined identifiers to prevent external interference
-of Named Node Identifiers, including these statements requires them to be placed 
+As there are multiple possible interpretations of the name identifier
+for Named Graphs in RDF, relabeling the Named Graph name identifier 
+throughout the exchanged data might or might not be preferable.
 
 Issue: The first issue is that there are 2 conflicting interpretations of graph name values and their associated named graphs.
 EITHER the name is a reference or it is not. Automating a relabeling with either of these 2 interpretations breaks the other interpretation.
@@ -220,46 +201,49 @@ So the best approach is to leave this up to the implementer. (same as blank node
 
 Issue: Secondly, we may need to keep hold of the original graph name for the use-case of reverting the relabeling later.
 
-In cases where RDF source data is to be included that already contains RDF Graphs, 
-a conversion is to be made to a form that only contains triples in the default graph
-and in Blank Node Graphs.
-
-
-Concretely, for an input graph 
+An example set of content statements
 
 ```turtle
-:a :b :c <graph1> .
-:d :e <graph2> <graph1> .
-:x :y :z <graph2> .
+:Ruben foaf:name "Ruben" <https://ruben.com/profile.ttl>.
+:Ruben foaf:knows :Pieter <https://ruben.com/profile.ttl>.
+:Pieter foaf:PersonalProfileDocument <https://pieter.org/profile.ttl> <https://ruben.com/profile.ttl>.
+:Pieter foaf:name "Pieter" <https://pieter.org/profile.ttl>.
 ```
 
-Relabeling the graphs without including non-graph identifiers results in the following
+Is converted to the following Blank Node Graph format when creating a context association:
 
 ```turtle
-:a :b :c _:b0 .
-:d :e <graph2> _:b0 .
-:x :y :z _:b1 .
+_:signatureGraph {
+    _:signature :targets _:graphUnion;
+        :value "...";
+        :issuer :Ruben;
 
-_:b0 a ca:GraphReference;
-    ca:name <graph1>
+    _:graphUnion a ca:GraphUnion;
+        ca:includes _:provenanceGraph, _:graph1, _:graph2.
+}
 
-_:b1 a ca:GraphReference;
-    ca:name <graph2>
+_:provenanceGraph {
+    _:graph1 :origin <https://ruben.com/profile.ttl>.
+    _:graph2 :origin <https://pieter.org/profile.ttl>.
+}
+
+_:graph1 {
+    :Ruben foaf:name "Ruben".
+    :Ruben foaf:knows :Pieter.
+    
+    # The profileDocument EITHER is retained as its original URI
+    :Pieter foaf:PersonalProfileDocument <https://pieter.org/profile.ttl>. 
+
+    # OR the profileDocument link is relabeled to reference the local graph
+    :Pieter foaf:PersonalProfileDocument _:graph2. 
+}
+
+_:graph2 {
+    :Pieter foaf:name "Pieter".
+}
+
 ```
 
-OR as follows when also relabeling non-graph identifiers:
-
-```turtle
-:a :b :c _:b0 .
-:d :e _:b1 _:b0 .
-:x :y :z _:b1 .
-
-_:b0 a ca:GraphReference;
-    ca:name <graph1>
-
-_:b1 a ca:GraphReference;
-    ca:name <graph2>
-```
-
-A sensible default option here is to use the first approach in not relabeling non-graph identifiers, 
-and on inclusion of external data mapping the references where desired to the relevant graph identifiers.
+The exact requirements when relabeling Named Graph name identifiers
+is dependent on the interpretation of these identifiers in the 
+local data model and is left up to the implementer.

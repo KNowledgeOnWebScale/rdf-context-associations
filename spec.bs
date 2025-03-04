@@ -180,6 +180,12 @@ Issue: testing compliance - how?
 Including Source Quads {#quads}
 ===============================
 
+Issue: Make sure to make explicit in the example that "LOCAL KNOWLEDGE of what the graph means (origin) is made explicit as provenance"
+
+Issue: Make sure to make explicit that the choice of which graph name identifiers should be relabeled is undecidable and should be taken case by case.
+
+Issue: Show that based on the above 2 choices, roundtripping can be done based on the knowledge of the above 2 parameters
+
 Including source data when defining contextual information, 
 the named graphs in the source data will need to be processed
 to a Blank Node Graph format that guarantees uniqueness of 

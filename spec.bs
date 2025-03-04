@@ -8,11 +8,11 @@ Repository: KNowledgeOnWebScale/rdf-context-associations
 URL: https://knowledgeonwebscale.github.io/rdf-context-associations/
 Editor: Ruben Dedecker, IDLab - Ghent University, ruben.dedecker@ugent.be
 Editor: Pieter Colpaert, IDLab - Ghent University, https://pietercolpaert.be
-<!-- Abstract: The RDF Context Association specification provides instructions for clients to interpret associations of contextual data to a closed set of target statements in RDF. It defines how closed sets of statements can be modeled in RDF as Named Graphs with Blank Node name identifiers (Blank Node Graphs) and the modeling of sets of Blank Node Graphs that can be interpreted as a single closed set of quad statements. -->
 Abstract: This specification describes the definition of general context associations in RDF using RDF graphs
 Markup Shorthands: markdown yes, css no
 </pre>
 
+<!-- Abstract: The RDF Context Association specification provides instructions for clients to interpret associations of contextual data to a closed set of target statements in RDF. It defines how closed sets of statements can be modeled in RDF as Named Graphs with Blank Node name identifiers (Blank Node Graphs) and the modeling of sets of Blank Node Graphs that can be interpreted as a single closed set of quad statements. -->
 
 Introduction {#intro}
 =====================

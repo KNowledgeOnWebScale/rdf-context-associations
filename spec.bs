@@ -19,22 +19,71 @@ Markup Shorthands: markdown yes, css no
 <!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
 
-
+Issue: todo:
+1. incorporate profile negotiation: https://profilenegotiation.github.io/I-D-Accept--Schema/I-D-accept-schema
+2. Move appendix A and B to github issues for interactive discussion
 
 Introduction {#intro}
 =====================
 
-`RDF Context Associations` is a modeling approach to define contextual information over a closed set of
-target statements in the RDF framework that remain unambiguous under storage, merging and processing in the RDF stack.
-As current specifications for policies, provenance and signatures in RDF do not define specific
-semantics requirements for their targets except for defining the target as a URI,
-the processing of the associated set of statements to this contextual information in the RDF stack
-is left up to interpretation.
+`Context Associations` are a modeling approach to define contextual information over a closed set of
+target statements in the RDF framework that remain unambiguous under storage, exchange and processing 
+in the Semantic Web stack.
+Where specifications for policies, provenance and signatures that align with RDF often
+do not define a specific interpretation for their targets, other than providing a URI value,
+this specification aims to provide a modeling approach that enables the interpretation of a target set 
+of statements independent of the context information that refers to it.
 
-The goal of this specification is to provide a modeling approach that enables the definition of 
-a closed set of statements (or collection of sets of statements) in RDF that when targeted by contextual
-information remains unambiguous when processed throughout the network in which they are exchanged
-and the RDF stack in which they are processed.
+Concretely, it aims to define a modeling approach that uniquely defines a closed set of target statements
+that can be referenced as a single URI, remains unambiguous under storage, exchange and processing 
+in the Semantic Web stack.
+
+
+<div class="example">
+An example association providing user-signed usage access to a medical instance of government-signed user medical data.
+```turtle
+@prefix sign: <https://example.org/signature#>.
+@prefix prov: <https://example.org/provenance#>.
+@prefix pol: <https://example.org/policy#>.
+@prefix reg: <https://example.org/government/registry#>.
+@prefix med: <https://example.org/government/medical#>.
+
+_:policySignatureGraph {
+    _:s a sign:Signature;
+        sign:value "...";
+        sign:target _:targetGraph;
+        sign:issuer <http://people.org/Ruben>.
+}
+
+_:policyGraph {
+    _:p a pol:Policy;
+        pol:permission [
+            pol:target _:targetGraph;
+            pol:action pol:Read;
+            pol:assigner <http://people.org/Ruben>;
+            pol:assignee med:MedicalService.
+        ].
+}
+
+_:dataSignatureGraph {
+    _:s a sign:Signature;
+        sign:value "...";
+        sign:target _:targetGraph;
+        sign:issuer reg:CitizenDatabase.
+}
+
+_:dataGraph {
+    <http://people.org/Ruben> foaf:name "Ruben".    
+        foaf:age 28.
+    med:PatientRecord19237128149 :targetUser <http://people.org/Ruben>.
+        med:date "2021-01-01"^^xsd:date.
+        med:doctor ...;
+}
+```
+</div>
+
+
+
 
 <!-- 
 This raises the following set of requirements that have to be fulfilled:
@@ -138,7 +187,12 @@ the use of [Skolemized identifiers](https://www.w3.org/TR/rdf11-mt/#skolemizatio
 guarantees the uniqueness of generated identifiers, while remaining referenceable 
 from outside the local RDF scope.
 
+Issue: We could make the point that, as conveying information using a specific interpretation
+of blank node graphs conveyed using a profile and/or a hinting identifier type is a best-effort approach,
+the same statements can be provided in the default graph, where they are subject to the 
+impicit context of the data exchange?
 
+<!-- 
 Appendix A: Multiple Graph Associations {#multiple_graphs}
 ==============================================
 
@@ -254,4 +308,6 @@ and data.
 By explicitly interpreting the statements of the received 
 context associations into a format where the graph name identifier
 defines the origin of the a statement, the original dataset can 
-be reconstructed.
+be reconstructed. 
+
+-->

@@ -19,43 +19,128 @@ Markup Shorthands: markdown yes, css no
 <!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
 
-Issue: todo:
-1. incorporate profile negotiation: https://profilenegotiation.github.io/I-D-Accept--Schema/I-D-accept-schema
-2. Move appendix A and B to github issues for interactive discussion
-
 Introduction {#intro}
 =====================
-
-`Context Associations` are a modeling approach to define contextual information over a closed set of
-target statements in the RDF framework that remain unambiguous under storage, exchange and processing 
-in the Semantic Web stack.
-Where specifications for policies, provenance and signatures that align with RDF often
-do not define a specific interpretation for their targets, other than providing a URI value,
-this specification aims to provide a modeling approach that enables the interpretation of a target set 
-of statements independent of the context information that refers to it.
-
-Concretely, it aims to define a modeling approach that uniquely defines a closed set of target statements
-that can be referenced as a single URI, remains unambiguous under storage, exchange and processing 
-in the Semantic Web stack.
-
+<!-- The goal of the spec is to be able to define a TARGET set of statements -->
+`Context Associations` is a modeling approach for modeling and interpreting 
+a target reference consisting of a closed set of statements in RDF. 
+The approach provides guarantees of remaining unambiguous under 
+storage, exchange and processing in the Semantic Web ecosystem.
+<!-- we want to be able to include even existing metadata standards  -->
+Current models for signatures, provenance and policy information
+often do not specify explicit boundaries of their target information in 
+the RDF ecosystem, relying on external interpretation or non-rdf processing
+to define target boundaries.
+The ability to define the target of these context definitions as a closed
+set of statements within the local scope enables the combined processing 
+of these context definitions using the RDF stack.
 
 <div class="example">
-An example association providing user-signed usage access to a medical instance of government-signed user medical data.
+Defining a set of statements as the target Dataset with associated origin.
+```turtle
+> Content-Type: text/trig;profile=https://w3id.org/ca/graph_occurence
+
+@prefix dcat: <http://www.w3.org/ns/dcat#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sign: <https://example.org/signature#>.
+
+
+_:graph {
+    <http://people.org/ruben> foaf:name "Ruben";
+        foaf:age 28.
+}
+
+_:graph a dcat:Dataset;
+    dcterms:creator <http://people.org/ruben>;
+    dcterms:created "2021-01-01"^^xsd:date.
+
+_signature a sign:Signature;
+    sign:target _:graph;
+    sign:issuer <http://people.org/ruben>.
+    ...
+```
+</div>
+
+To model target sets of statements, we make use of Named Graphs in RDF.
+[[#named_graph_references]] defines the modeling requirements for 
+these Named Graphs that enables uniform interpretation throughout the 
+ecosystem. 
+[[#blank_node_graphs]] defines the requirements for ensuring 
+target sets of statements are closed in the local scope, 
+making them immutable from external sources.
+
+
+
+
+Named Graph references {#named_graph_references}
+==================================================
+Defining contextual information that targets a set of statements encompassed
+in a Named graph, the ability to reference the RDF Graph contained in the 
+name-graph pair using its name identifier is required.
+
+To enforce this interpretation, the RDF profile `https://w3id.org/ca/graph_occurence` 
+can be defined on the source using [profile negotiation in HTTP](https://profilenegotiation.github.io/I-D-Accept--Schema/I-D-accept-schema)
+in an approach that enforces the above interpretation over the full data source: 
+
+```
+> Content-type text/turtle;profile=https://w3id.org/ca/graph_occurence
+
+_:graphName { ... }
+```
+
+Any RDF datasource retrieved advertising the profile `https://w3id.org/ca/graph_occurence`
+MUST interpret name identifiers of named graphs in its content 
+as referencing the associated RDF Graph of the named graph.
+
+Issue: todo: incorporate other expressions of profile negotiation
+
+Alternatively, the interpretation can be hinted in the RDF scope
+by defining the name identifier of a named graph as an `rdf:type` 
+of `ca:GraphIdentifier`.
+
+```turtle
+@prefix ca: <https://w3id.org/ca/> .
+
+_:graphName a ca:GraphIdentifier.
+_:graphName { ... }
+```
+Any identifier defined with an `rdf:type` of `ca:GraphIdentifer`
+MUST be interpreted as referencing the associated RDF Graph of the named graph.
+
+
+Blank Node Graphs {#blank_node_graphs}
+======================================
+<!-- This section targets the problem of making target sets of statements closed / unambiguous (at least syntactically) -->
+
+The definition of target sets of statements an Named Graphs,
+in addition to requiring the name identifier to reference the contained RDF Graph 
+also requires the set of statements contained by this RDF Graph to remain unambiguous throughout its lifespan.
+
+To enforce the unique definition of Named Graph, its name identifier MUST
+be defined as EITHER a Blank Node identifier, or as a [Skolemized identifier](https://www.w3.org/TR/rdf11-mt/#skolemization-informative)
+in cases where external references are required to ensure the unique generation of the name identifier.
+
+<div class="example">
+An example association providing user-signed usage access to a medical instance of government-signed user medical data using skolemized name identifiers for named graphs.
 ```turtle
 @prefix sign: <https://example.org/signature#>.
 @prefix prov: <https://example.org/provenance#>.
 @prefix pol: <https://example.org/policy#>.
 @prefix reg: <https://example.org/government/registry#>.
 @prefix med: <https://example.org/government/medical#>.
+@prefix skolem: <https://example/org/.well-known/skolem/8b98b360-9a70-4845-b52c-c675af60ad01#>.
 
-_:policySignatureGraph {
+
+skolem:policySignatureGraph {
     _:s a sign:Signature;
         sign:value "...";
         sign:target _:targetGraph;
         sign:issuer <http://people.org/Ruben>.
 }
 
-_:policyGraph {
+skolem:policyGraph {
     _:p a pol:Policy;
         pol:permission [
             pol:target _:targetGraph;
@@ -65,14 +150,14 @@ _:policyGraph {
         ].
 }
 
-_:dataSignatureGraph {
+skolem:dataSignatureGraph {
     _:s a sign:Signature;
         sign:value "...";
         sign:target _:targetGraph;
         sign:issuer reg:CitizenDatabase.
 }
 
-_:dataGraph {
+skolem:dataGraph {
     <http://people.org/Ruben> foaf:name "Ruben".    
         foaf:age 28.
     med:PatientRecord19237128149 :targetUser <http://people.org/Ruben>.
@@ -83,231 +168,3 @@ _:dataGraph {
 </div>
 
 
-
-
-<!-- 
-This raises the following set of requirements that have to be fulfilled:
-(i) the unambiguity of the referenced set of statements, 
-(ii) the ability to unambiguously reference the union of multiple such sets of statements, 
-(iii) the data model used for the associations should remain compatible with the core RDF specification
-and (iv) that any set of RDF quads can be converted to a valid target for such a context association. 
--->
-
-<!-- 
-Issue: rephrase this base uri presentation
-
-The base URI for RDF Context Association is https://w3id.org/ca#, and the preferred prefix is `ca`:. Other prefixes are used following [prefix.cc](prefix.cc). 
--->
-
-
-
-
-Blank Node Graphs {#blank_node_graphs}
-======================================
-<!-- 
-Issue: We have a choice here to either provide specific predicates / types to indicate a required interpretation OR an RDF profile.
-The choice for using a profile is much more interesting in terms of reusability, as agreeing on graph interpretation is a broader issue to solve.
-Additionally, the use of predicates and classes has 2 problems: 
-1. if the identifying type is not present, interpretation changes, which should not be possible under RDF
-2. if the type is present but no graph uses that identifier, we have an inconsistency.  
--->
-
-The RDF core specification provides three approaches to modeling statements 
-about (sets of) statements in RDF through reification, named graphs and triple terms.
-As only named graphs provides the capability to target a sets of statements,
-we use this as the baseline for the modeling approach.
-
-The use of Named Graphs in RDF requires the addition of concrete rules for definition
-and interpretation of the context association model, that are enforced through the use 
-of the following RDF profile: 
-
-Issue: Graph occurrence? what name would be good?
-
-```
-    <Content-Type>;profile=https://w3id.org/ca/graph_occurence
-```
-
-## Enforcing semantic interpretation of named graphs
-
-<!-- we need to enforce a specific interpretation -->
-
-To define context associations using named graphs in RDF,
-the following interpretation is be enforced within the profile:
-```
-Te Named Graph identifies a pair of a name identifier and a graph term where:
-(i) the name identifier MUST be interpreted as the referent for the associated graph term and
-(ii) the graph term MUST be interpreted as the occurrence of that graph term denoted by the name identifier. 
-```
-Concretely, this defines that all references to the name identifier of a Named Graph
-MUST be interpreted as referencing the associated Graph term and its contained set of triple statements.
-Additionally, the semantic inferences of the contents of the associated Graph Term are contained to the graph boundary.
-
-<!-- Issue: define this for all inferences EXCEPT basic inference (e.g. blank node co-referencing) -->
-
-<!-- Issue: can we align this anywhere? The RDF 1.2 SPARQL entailment and semantics and ... specs are not yet done. -->
-
-<!-- Issue:  OOOOR we define only the reference part BUT NOT the interpretation of the graph semantics part?
-Unsure what the downsides are of leaving the interpretation of the graph up to the implementer, 
-and in essence it might not be the requirement of the context association to define the interpretation of the trust value of the contained triples? -->
-
-
-<figure id="my-code" class="listing">
-```
-> Content-Type: text/trig;profile=https://w3id.org/ca/graph_occurence
-
-@prefix : <http://example.org/ns>;
-_:signature :target _:targetGraph;
-_:targetGraph { :a :b :c . }
-```
-<figcaption markdown="block">
-The profile interpretation enforces the Signature target to 
-be exactly the set of quads for which the graph term equals `_:graphName`,
-which in this case is `:a :b :c _:graphName`.
-</figcaption>
-</figure>
-
-
-## Preventing ambiguity using Blank Nodes identifiers
-
-To prevent ambiguity in the interpretation of context associations, we need to take into 
-account the RDF specification that defines merging different sources of RDF data requires 
-their named graphs to be combined using the `merge` or `union` operation on their contained graphs.
-As context associations need to be unambiguous, the use of non-unique identifiers as graph name 
-identifiers is excluded.
-
-To defined context associations, the target set of statements MUST be defined as a 
-named graph with a blank node identifier or skolemized identifier.
-
-As blank node identifiers are defined as existential in the local RDF scope, 
-any clashing blank node identifiers that are merged into the local graph must
-be relabeled according to the RDF specification. This however also means that
-these blank node identifiers are not referencable from outside the local scope.
-For cases where external referencability is required, 
-the use of [Skolemized identifiers](https://www.w3.org/TR/rdf11-mt/#skolemization-informative)
-guarantees the uniqueness of generated identifiers, while remaining referenceable 
-from outside the local RDF scope.
-
-Issue: We could make the point that, as conveying information using a specific interpretation
-of blank node graphs conveyed using a profile and/or a hinting identifier type is a best-effort approach,
-the same statements can be provided in the default graph, where they are subject to the 
-impicit context of the data exchange?
-
-<!-- 
-Appendix A: Multiple Graph Associations {#multiple_graphs}
-==============================================
-
-To define context associations over multiple sets of RDF statements,
-we advise the targeting of individual sets of statements as follows:
-```turtle
-<context> <targets> _:graph1, _;graph2
-```
-in which case the interpretation of the context associations takes the form of:
-```
-context targets (graph1, graph2) => context targets (graph1), context targets (graph2)
-```
-
-However, in cases such as negative references, where the union of sets of statements 
-needs to be explicitly targeted, we propose the use of an entity that represents the
-syntactic union of the target graphs.
-
-This is modeled as an entity of the type `ca:GraphUnion` that includes
-the graphs to be targeted using the `ca:includes` as follows:
-
-<figure>
-```turtle
-> Content-Type: text/trig;profile=https://w3id.org/ca/graph_occurence
-
-@prefix ca: <https://w3id.org/contextassociations#>.
-@prefix : <http://example.org/ns>.
-
-_:signature :targets _:graphUnion;
-
-_:graphUnion a ca:GraphUnion;
-    ca:includes _:graph1, _:graph2.
-
-_:graph1 { :a :b :c . }
-_:graph2 { :x :y :z . }
-```
-<figcaption>
-The signature targets the union of quads 
-with a graph term `_:graph1` and with graph term `_:graph2`,
-WITHOUT targeting the _:graphUnion entity and its inclusion statements.
-</figcaption>    
-</figure>
-
-We propose that the interpretation of a target URI that is of type `ca:GraphUnion` is 
-defined as `the set of quads for which the graph term is defined as included by 
-the GraphUnion entity using the ca:includes predicate`.
-Note that this DOES NOT include the GraphUnion entity itself and its inclusion statements
-in the target set of quads!
-
-
-Appendix B: Including Source Quads {#quads}
-===============================
-
-To define context associations over a set of RDF statements that is already
-defined in a named graph, a conversion to blank node identifiers for the graph 
-name is required.
-
-However, as the RDF specification does not define a specific interpretation 
-for the relation between the graph name and associated RDF graph in a named graph,
-conflicting interpretations are currently in use.
-
-Hence, we propose the following algorithm to convert any set of source quads
-with a graph term `G` to a blank node graph format that can be targeted in a 
-context association:
-
-1. rename the graph term `G` to a blank node identifier `_:G`.
-2. depending on the interpretation of the graph name in the source data:
-    - if the graph name is meant as a graph reference, relabel all occurrences of the `G` to `_:G`.
-    - else, do not relabel other occurrences of `G` in the source.
-3. define any implicit meaning attached to the identifier `G` as explicit context information defined on `_:G`.
-
-NOTE: When relabeling source graphs individually, make sure to replace other occurrences of 
-the graph name identifiers when combining the resulting relabeled data in the same scope.
-
-
-An example conversion of source quads from Ruben's personal dataspace:
-
-```turtle
-:Ruben foaf:name "Ruben" <https://ruben.com/profile.ttl>.
-:Ruben foaf:knows :Pieter <https://ruben.com/profile.ttl>.
-:Pieter foaf:PersonalProfileDocument <https://pieter.org/profile.ttl> <https://ruben.com/profile.ttl>.
-
-:Pieter foaf:name "Pieter" <https://pieter.org/profile.ttl>.
-```
-
-that defines provenance inforamtion and an associated signature is done as follows.
-Note that the profile document URI is NOT relabeled in this case, as it was not 
-defined as a graph name in the original dataspace graph.
-
-
-```turtle
-_:signatureGraph { _:signature :targets _:provenanceGraph; :issuer :Ruben. }
-_:signatureGraph2 { _:signature2 :targets _:graph1; :issuer :Ruben. }
-
-_:provenanceGraph {
-    _:graph1 :origin <https://ruben.com/profile.ttl>.
-    _:graph2 :origin <https://pieter.org/profile.ttl>.
-}
-
-_:graph1 {
-    :Ruben foaf:name "Ruben".
-    :Ruben foaf:knows :Pieter.
-    :Pieter foaf:PersonalProfileDocument <https://pieter.org/profile.ttl>. 
-}
-_:graph2 {
-    :Pieter foaf:name "Pieter".
-}
-
-```
-
-At the receiving side, the original content can be processed
-by interpreting the received associations of contextual information
-and data. 
-By explicitly interpreting the statements of the received 
-context associations into a format where the graph name identifier
-defines the origin of the a statement, the original dataset can 
-be reconstructed. 
-
--->

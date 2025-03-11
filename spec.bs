@@ -56,7 +56,7 @@ _:graph a dcat:Dataset;
     dcterms:creator <http://people.org/ruben>;
     dcterms:created "2021-01-01"^^xsd:date.
 
-_signature a sign:Signature;
+_:signature a sign:Signature;
     sign:target _:graph;
     sign:issuer <http://people.org/ruben>.
     ...

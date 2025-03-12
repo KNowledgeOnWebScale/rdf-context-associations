@@ -52,7 +52,7 @@ _:graph {
         foaf:age 28.
 }
 
-_:graph a dcat:Dataset;
+_:graph a dcat:Resource;
     dcterms:creator <http://people.org/ruben>;
     dcterms:created "2021-01-01"^^xsd:date.
 

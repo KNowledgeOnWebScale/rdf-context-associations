@@ -136,14 +136,14 @@ An example association providing user-signed usage access to a medical instance 
 skolem:policySignatureGraph {
     _:s a sign:Signature;
         sign:value "...";
-        sign:target _:targetGraph;
+        sign:target skolem:dataGraph ;
         sign:issuer <http://people.org/Ruben>.
 }
 
 skolem:policyGraph {
     _:p a pol:Policy;
         pol:permission [
-            pol:target _:targetGraph;
+            pol:target skolem:dataGraph ;
             pol:action pol:Read;
             pol:assigner <http://people.org/Ruben>;
             pol:assignee med:MedicalService.
@@ -153,7 +153,7 @@ skolem:policyGraph {
 skolem:dataSignatureGraph {
     _:s a sign:Signature;
         sign:value "...";
-        sign:target _:targetGraph;
+        sign:target skolem:dataGraph ;
         sign:issuer reg:CitizenDatabase.
 }
 

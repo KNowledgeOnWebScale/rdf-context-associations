@@ -80,6 +80,7 @@ TODO: fix ISWC Link with arxiv link
 
 
 <div class="example">
+An example association of a set of contextual information accompanying an RDF graph. 
 We want to assign an origin of a set of statements to the user personal data space:
 ```turtle
 @prefix dcterms: <http://purl.org/dc/terms/>.
@@ -98,56 +99,83 @@ _:dataGraph;
 </div>
 
 
+Defining local targets as blank node graphs {#named_graph}
+===============================================================================
 
+To provide a uniform modeling approach in RDF for referencing content local
+to the RDF dataset, we need to be able to provide some guarantees that ensure
+the usability of the approach for the exchange, storage and interpretation of
+data and associated context in RDF throughout the Web ecosystems throughout 
+their lifecycle.
 
+TODO: RDF dataset link to definition in spec
 
-To make sure a proposed approach guarantees a uniform interpretation of statements
-expressed over other sets of statements in RDF, we must be able to guarantee the 
-following requirements: 
-    1. We can define a set of statements in RDF that can be unambiguously referenced from within the local scope;
-        meaning that the reference to the set of statements must UNIQUELY define that statement set for clients interpreting the data.
-    2. We can define a set of statements that is closed to the local RDF scope;
-        meaning the defined set of statements can be shielded against references by sources external to the local scope.
+This imposes a requirement that:
+*the modeling approach must allow the definition of a finite set of RDF statements in the local RDF scope, that is unambiguous in reference and contained to the local RDF scope* 
 
+The `unambiguous` nature of the reference enforces that the identifier used to reference this set of statements
+cannot be interpreted in any other capacity than in reference to this target set of statements in the local RDF scope.
+The `contained` nature of the reference enforces that the set of statements is closed in the local scope,
+and does not allow outside references to these statement sets, or cause interference with these statements 
+sets when merging data from outside sources in our local RDF scope.
+While local actions may change these statement sets, the creation of signatures can then be used to practically 
+enforce immutability on top the target set of statements.
 
+With Context Associations, we define sets of statements in the local RDF scope as named graphs,
+where the graph name is defined as a blank node identifier to restrict the scope of the named graph to the local RDF scope.
+We base this on the goals indicated by the [named graphs paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3199260)
+dating from 2005, where the capacity of named graphs to define signatures, policies and provenance information over data
+in the local RDF scope is defined as a core target for the introduction of named graphs in RDF.
 
-With the above example, we showcase the main design choices
-made to model local statement references in RDF: 
+In the RDF specification, the relation between the graph name and RDF graph that constitute a named graph is not defined.
+Because of this, we cannot natively define a semantic interpretation for any URI or blank node identifier in an RDF document,
+and indicate that this is the graph name of a named graph.
+There are multiple approaches that could be taken to enforce this interpretation, 
+such as specifically typing this identifier as a graph name. 
+However, this still opens up the possibility of misinterpretation, 
+as additional types or properties defined on the graph name can cause type confusion, 
+especially in cases where data is sourced from an original that uses the graph name for specific indexing of triples,
+where such double typing of graph names may be more likely to occur.
 
-1. We define a target set of statements using a named graph.
-2. We define the graph name of this named graph as a blank node, to ensure local scope closure.
-3. We define metadata in reference to this target graph, for which we rely on SPARQL semantics to enforce a uniform interpretation.
+The only way we can enforce a uniform interpretation of an identifier as the graph name of a named graph,
+is through the use of the `GRAPH` keyword defined in the SPARQL specification.
+This `GRAPH` keyword can be used to bind a variable to an identifier that can 
+only be interpreted as the graph name of a named graph in the local RDF scope.
 
-<!-- 
-To model target sets of statements, we make use of Named Graphs in RDF.
-[[#named_graph_references]] defines the modeling requirements for 
-these Named Graphs that enables uniform interpretation throughout the 
-ecosystem. 
-[[#blank_node_graphs]] defines the requirements for ensuring 
-target sets of statements are closed in the local scope, 
-making them immutable from external sources. 
--->
+<div class="example" id="sparql-binding">
+SPARQL provides tha ability to bind named graphs via their graph name in the local scope (e.g. using the variable ?g in the example).
+```sparql
+GRAPH ?g1 { ... }
+GRAPH ?g2 { ?g2 ?p ?o }
 
-Where the above example showcases a minimal approach, 
-the goal of data represented as a context association
-is to have fully independent sets of RDF statements that
-are interlinked in their references to other statements, 
-and can be queried using SPARQL for both target statements
-and associated (metadata) statements to provide unambiguous
-querying of all interlinked information in the local scope.
+``` 
+</div>
+
+In the [SPARQL example](#sparql-binding), the `GRAPH` keyword is used to bind the variable `?g`
+to the graph name of a named graph in the local RDF scope, allowing this binding to be used
+for the unambiguous association of additional information to this target graph.
+This provides us with the certainty that
+*the definition of a named graph with a graph name N and an RDF Graph G, will only bind a subset of G for a Basic Graph Pattern matched on the Graph G using the `GRAPH` keyword`*.
+This provides us with certainty that the processing of the Context Associations defined using named graphs 
+can be done unambiguously throughout Web ecosystems, by relying on the SPARQL interpretation of named graphs in RDF.
+
+Building on this, the concept of a `blank node graph` is the definition of a named graph in RDF 
+where a blank node is used as its graph name identifier. By restricting the graph name definition to a blank node identifier, 
+the resulting named graph can only be referenced from the local RDF scope due to blank-node relabeling in RDF.
+
+TODO: reference blank node relabeling
+
 
 <div class="example">
-To ensure that all data can be unambiguously referenced by other data,
-signatures, policies, or other information that benefits its integration
-in new systems on the Web, we ensure that all information is embedded in named graphs,
-creating a Contextualized Knowledge Graph, indicated in the [Named Graphs paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3199260).
+The following RDF dataset unambiguously defines provenance information 
+over a set of statements defining Ruben's name and age in the local RDF 
+scope when interpreted with the `GRAPH` keyword using SPARQL.
+
 ```turtle
 @prefix ex: <http://example.org/ns#>.
-@prefix dcat: <http://www.w3.org/ns/dcat#>.
 @prefix dcterms: <http://purl.org/dc/terms/>.
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix sign: <https://example.org/signature#>.
 
 _:graph {
     <http://people.org/ruben> 
@@ -158,36 +186,43 @@ _:meta {
     _:dataGraph 
         dcterms:source <http://dataspaces.org/ruben> ;
         dcterms:creator <http://people.org/ruben> ;
-        dcterms:created "2021-01-01"^^xsd:date .
-}
-_:meta_sign {
-    _:signature
-        a sign:Signature ;
-        sign:target _:meta .
 }
 ```
+
+This query provides an unambigous evaluation of origin metadata
+defined over the graphs in the local scope of the evaluated RDF dataset.
+```sparql
+CONSTRUCT { 
+    ?s ?p ?o 
+} WHERE {
+    GRAPH ?dataGraph { ?s ?p ?o }.
+    GRAPH ?metadataGraph { ?dataGraph dcterms:source <http://dataspaces.org/ruben> }.
+}
+``` 
 </div>
 
-The above example showcasing all information nested in named graphs 
-with interlinking references connecting the graphs, we call a 
-Contextualized Knowledge Graph, providing a practical approach to storing
-both sets of statements and associations between these sets of statements 
-natively in RDF without confusion as to what is being referenced, 
-as defined in [previous work (What's in a Pod)](https://ceur-ws.org/Vol-3279/paper6.pdf).
 
-Todo: side-by-side comparison table -- ngraphs - stdreif - tterms
+The above example showcasing the linking of information between named
+graphs at a scope local to the RDF dataset, we name a `Contextualized Knowledge Graph`,
+as defined in [previous work (What's in a Pod)](https://ceur-ws.org/Vol-3279/paper6.pdf). 
+This approach to managing information in RDF Dataset providing a practical approach to storing
+interlinking information in an organized and unambiguous approach that is contained to the local
+scope in its organization, but can be exchanged, shared and processed throughout Web ecosystems 
+in combination with other RDF data without changing its interpretation due to its unambiguous nature
+and reliance on blank-node relabeling to prevent graph merging. 
 
-To ensure the uniform representation of RDF data in the form of a Contextualized
-Knowledge Graph, we enforce the following rules when creating an RDF dataset to which 
-data is being added: 
 
+TODO: add section on processing source RDF into the Context Associations format.
+
+<!-- 
 1. Any added set of statements that is contained in the default graph of a resource being added to the RDF Dataset, is wrapped in a named graph. Note that unless metadata is added to indicate this named graph encapsulates statements originally contained by the defualt graph in some capacity, this knowledge will be lost through this conversion.
 2. Any added named graph (inluded the one created above) must have its name be a blank node identifier (or a skolem identifier in case internal systems require a directl link to the graph). This ensures (i) the uniqueness of the graph name, (ii) that no external references to this named graph can exist, and (iii) partially clears up confusion about the meaning of a graph identifier, though this might not be enough if this blank node is defined in other locations local to the resource to another capacity than just the graph name. For this edge case, we cannot enforce any concrete rules with regards to the creation of the RDF dataset. 
 3. To ensure a uniform interpretation, we rely on the SPARQL specification to enforce the intepretation of named graphs from the RDF Dataset when interpreting the resulting Contextualized Knowledge Graph. The SPARQL specification does not define a specific relation between the graph name and RDF graph contained by a named graph, though it provides the `GRAPH` keyword that when provided with a name variable, provides a direct reference to the associated RDF graph. We make use of this interpretation to enforce a consistent interpretation of context associations in RDF that use named graphs with blank node graph names.   
+ -->
 
-
-Interpreting target references in RDF contexts {#boundary}
+Interpreting target references in the local RDF scope {#references}
 ===============================================================================
+
 
 Todo: make use of tables to make content more palletable
 

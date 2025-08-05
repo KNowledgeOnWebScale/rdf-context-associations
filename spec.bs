@@ -281,11 +281,11 @@ _:g1 {
     _:g0 sec:proof _:dataSignature;
     _:signature1 
         a sec:DataIntegrityProof;
-        sec:cryptosuite: "ecdsa-rdfc-2019";
-        sec:created: "2021-11-13T18:19:39Z";
-        sec:verificationMethod "https://university.example/issuers/14#key-1";
-        sec:proofPurpose" "assertionMethod";
-        sec:proofValue" "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz".
+        sec:cryptosuite "ecdsa-rdfc-2019";
+        sec:created "2021-11-13T18:19:39Z"^^xsd:dateTime;
+        sec:verificationMethod <https://university.example/issuers/14#key-1>;
+        sec:proofPurpose sec:assertionMethod;
+        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz".
         sec:issuer <https://university.example/issuers/14>;
         sec:validFrom: "2024-04-03T00:00:00.000Z"^^xsd:dateTime,
         sec:validUntil: "2025-04-03T00:00:00.000Z"^^xsd:dateTime,
@@ -296,11 +296,11 @@ _:g3 {
     _:g1 sec:proof _:signature2;
     _:signature2 
         a sec:DataIntegrityProof;
-        sec:cryptosuite: "ecdsa-rdfc-2019";
-        sec:created: "2021-11-13T18:19:39Z";
-        sec:verificationMethod "https://university.example/issuers/14#key-1";
-        sec:proofPurpose" "assertionMethod";
-        sec:proofValue" "adad123efv434r5200...dqed2t44v43das".
+        sec:cryptosuite "ecdsa-rdfc-2019";
+        sec:created "2021-11-13T18:19:39Z"^^xsd:dateTime;
+        sec:verificationMethod <https://university.example/issuers/14#key-1>;
+        sec:proofPurpose sec:assertionMethod;
+        sec:proofValue "adad123efv434r5200...dqed2t44v43das".
 }
 ```
 </div>
@@ -328,7 +328,7 @@ _:g1 {
 }
 
 # policy over data graph
-_:g1 {
+_:g2 {
     _:g0 odrl:hasPolicy _:policy.
     _:g1 odrl:hasPolicy _:policy.
     _:policy 
@@ -370,6 +370,113 @@ _:g1 {
         prov:contents _:g0.
 ```
 </div>
+
+
+
+Designing a Trust Envelope {#trust-envelope}
+============================================
+A Trust Envelope is a standardized way of exchanging a set of RDF statements 
+that are associated with a specific context, that is meant for exchange, storage 
+and processing throughout Web ecosystems.
+It provides a way to encapsulate the trust relationships and 
+policies that govern the use of the data within that context.
+
+Given a data graph 
+```turtle
+_:g0 {
+    :Bob foaf:name "Bob".
+        foaf:age 25.
+}
+```
+we define a trust envelope allowing the sharing of this data with a medical practitioner for the duration of 1 year, 
+with the inclusion of a set of metadata to indicate the provenance of the data, the signature of the data and the policy that governs its use.
+
+
+<div class="example">
+
+```turtle
+_:envelopeGraph {
+    _:envelope a trust:TrustEnvelope;
+        trust:sender <http://people.org/Bob>;
+        trust:recipient <http://medical.org/Practitioner>;
+        trust:includes  _:g1 _:g2 _:g3 _:g4 _:g5;
+}
+
+# data graph from Bob's data space
+_:g1 {
+    :Bob foaf:name "Bob".
+        foaf:age 25.
+}
+
+# signature of data graph, by belgian government also retrieved from Bob's data space
+_:g2 {
+    _:g0 sec:proof [
+    a sec:DataIntegrityProof;
+            sec:cryptosuite "ecdsa-rdfc-2019";
+            sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+            sec:verificationMethod <https://university.example/issuers/14#key-1>;
+            sec:proofPurpose sec:assertionMethod;
+            sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
+            sec:issuer <https://government.belgium/issuers/14>;
+            sec:validFrom "2020-01-01T00:00:00.000Z"^^xsd:dateTime;
+            sec:validUntil "2030-01-01T00:00:00.000Z"^^xsd:dateTime.
+        ] 
+}
+
+# metadata definition of retrieved data graph and associated siganture, by Bob's data space
+_:g3 {
+    _:g0 dcterms:source <http://dataspace.org/Bob>;
+    _:g1 dcterms:source <http://dataspace.org/Bob>;
+}
+
+_:g4 {
+    _:g1 odrl:hasPolicy _:policy.
+    _:g2 odrl:hasPolicy _:policy.
+    _:g3 odrl:hasPolicy _:policy.
+    _:policy 
+        odrl:permission [
+            odrl:target _:g1 _:g2 _:g3;
+            odrl:action odrl:Read;
+            odrl:assigner <http://people.org/Bob>;
+            odrl:assignee <http://medical.org/Practitioner>.
+        ].
+}
+
+
+
+_:g5 {
+    # signature of metadata graph by data space
+    _:g3 sec:proof _:s1;
+    _:s1 
+        a sec:DataIntegrityProof;
+        sec:cryptosuite "ecdsa-rdfc-2019";
+        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+        sec:verificationMethod <http://dataspaces.org/keys/publicKey>;
+        sec:proofPurpose sec:assertionMethod;
+        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
+        sec:issuer <http://dataspaces.org/Bob>;
+        sec:validFrom "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+        sec:validUntil "2025-04-03T00:00:00.000Z"^^xsd:dateTime.
+    
+    # signature for policy graph by Bob's personal signature
+    _:g4 sec:proof _:s2;
+    _:s2 
+        a sec:DataIntegrityProof;
+        sec:cryptosuite "ecdsa-rdfc-2019";
+        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+        sec:verificationMethod <https://people.org/Bob#key-1>";
+        sec:proofPurpose sec:assertionMethod;
+        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
+        sec:issuer <https://poeple.org/Bob>;
+        sec:validFrom "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+        sec:validUntil "2025-04-03T00:00:00.000Z"^^xsd:dateTime.
+}
+
+```
+</div>
+
+
+
 
 Examples {#examples}
 ====================

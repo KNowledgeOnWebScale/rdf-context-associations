@@ -303,28 +303,64 @@ _:g3 {
 }
 ```
 
+Issue: For querying purposes, it should be possible to evaluate a signature on its issuer quickly to validate contents based on signatures. VC has the same issue, in that the verification method should be a key that is owned by the issuer. (This is confirmed by resolving the issuer’s DID to its DID Document and checking that the verification method is listed under assertionMethod or a similar verification relationship. Same can be done for WebIDs. Add this to the spec.)
 
 Creating graph-based policies {#policies}
 ========================================
+
+The evaluation of policies over graphs also makes use of the SPARQL approach of finding the quads contained by the target graph.
+Note that for policy models such as ODRL, that atomize their policies over all targets, multiple target graphs can be indicated without changing the semantics of the policy.
+In cases where this would not be the case, such as policy models supporting negation over multiple targets, only signle target graphs can be used, as the semantics of the policy would not be clear otherwise.
+
+```turtle
+_:g0 {
+    :Bob foaf:name "Bob".
+}
+
+_:g1 {
+    _:g0 dc:origin <http://dataspace.org/Bob>;
+}
+
+# policy over data graph
+_:g1 {
+    _:g0 odrl:hasPolicy _:policy.
+    _:g1 odrl:hasPolicy _:policy.
+    _:policy 
+        pol:permission [
+            pol:target _:g0, _:g1 ;
+            pol:action pol:Read;
+            pol:assigner <http://people.org/Bob>;
+            pol:assignee med:MedicalService.
+        ].
+}
+```
 
 
 
 Designing graph-based provenance records {#provenance}
 ======================================================
 
+Defining provenance over graphs natively can be done by reference to its graph name as defined above. 
+However, likely provenance information will take the form of provenance objects indicating a certain
+action of entity interacting with a data graph. In this case, the provenance model can reference the
+data graph directly, while being wrapped in a named graph to allow for referencing. Signature and policy
+definitions now need to be defined both over the data graph and the metadata graph separately.
+Note that policies, provenance, signature metadata and other forms of additional information can be bundled
+in named graphs at will. The only constraint is that references to this named graph inherently target the whole 
+RDF graph and not individual statements inside the graph.
 
+```turtle
+_:g0 {
+    :Bob foaf:name "Bob".
+}
 
-
-
-
-
-
-## Provenance metadata
-
-
-
-
-
+_:g1 {
+    :DataRetrieval
+        a prov:Entity;
+        prov:wasDerivedFrom  <http://dataspace.org/Bob>;
+        prov:wasAttributedTo :Bob;
+        prov:contents _:g0.
+```
 
 Examples {#examples}
 ====================

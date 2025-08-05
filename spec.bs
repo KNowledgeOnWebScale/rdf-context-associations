@@ -13,7 +13,7 @@ Markup Shorthands: markdown yes, css no
 </pre>
 
 Abstract: 
-The RDF Context Association specification provides instructions for clients to interpret associations of contextual data to a closed set of target statements in RDF. It defines how closed sets of statements can be modeled in RDF as Named Graphs with Blank Node name identifiers (Blank Node Graphs) and the modeling of sets of Blank Node Graphs that can be interpreted as a single closed set of quad statements.
+This specification introduces RDF Context Associations, a method for unambiguously referencing and interlinking sets of RDF statements in a way that preserves contextual metadata—such as provenance, policies, and digital signatures—within the RDF data model. While existing approaches like RDF reification, named graphs, and RDF-star address parts of this need, none provide a consistent, interpretable mechanism that are required for data sharing, storage and integration across Web ecosystems. This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems.
 
 <!-- useful sources? -->
 <!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
@@ -22,35 +22,61 @@ The RDF Context Association specification provides instructions for clients to i
 
 Introduction {#intro}
 =====================
-<!-- The goal of the spec is to be able to define a TARGET set of statements -->
+With this RDF Context Associations specification, we aim to provide an RDF-native 
+approach for modeling and interpreting target local references of sets of statements
+in the RDF data model. 
+As the need for management of contextual information is becoming increasingly pressing
+for Web ecosystems, we notice a lack of support in RDF ecosystems for the definition and
+integration of expressions of provenance, policies and signatures in RDF.
+There is no consensus of how such expressions of metadata should be defined over exchanged data, 
+stored together with the data, and integrated throughout Web ecosystems as first-class citizens 
+on which the potential for integration and reuse of data is relying.
 
-With `Context Associations`, we aim to provide an approach for modeling and
-interpreting target references of sets of statements inside of RDF resources.
-As the need for managing context with RDF statements is becoming more pressing,
-with notably provenance, policies and signatures defined over RDF statements 
-that need to be stored, exchanged and interpreted together with the data, 
-we notice a lack of the current RDF ecosystem in providing a uniform way
-to both express and interpret such associations at an ecosystem level.
+Investigating the most prominent models, we see that the space for sigantures has been mainly
+geared towards support for [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/),
+and the policy space has mainly seen adoption of [ODRL](https://www.w3.org/TR/odrl-model/).
+However, these models come with downsides, as they are not designed for use within the RDF
+data model. 
 
-However, syntactic solutions have been proposed and integrated in the RDF ecosystem.
-Notably, reification with RDF 1.0, named graphs with RDF 1.1 and now triple terms planned with 
-the RDF 1.2 release are approaches that manage the definition of statements over statements in RDF.
-Even though, we see a lack of uniform interpretation and integration of these techniques in a practical
-capacity in Semantic Web ecosystems today.
+The Verifiable Credentials specification makes use of the resource JSON structure
+of credentials to define the closure over which a signature is defined, which makes it incompatible
+with the RDF data model for defining the closure of its contents (which quads are included and
+which are not in the RDF representation of the credential), even though it makes use of RDF dataset
+canonicalization [RDFC1-0](https://www.w3.org/TR/rdf-canon/) to canonicalize its RDF contents.
+Additionally, the use of the default graph to embed the credential and its claims, makes it impossible
+to connect a found claim with its issuing credential when federating SPARQL queries over the RDF 
+representation of multiple credentials that have the same credentialSubject value, making it unusable 
+for practical applications to query multiple credentials at once, limiting their use to only disseminating
+a limited set of claims at once.
 
-To make sure a proposed approach guarantees a uniform interpretation of statements
-expressed over other sets of statements in RDF, we must be able to guarantee the 
-following requirements: 
-    1. We can define a set of statements in RDF that can be unambiguously referenced from within the local scope;
-        meaning that the reference to the set of statements must UNIQUELY define that statement set for clients interpreting the data.
-    2. We can define a set of statements that is closed to the local RDF scope;
-        meaning the defined set of statements can be shielded against references by sources external to the local scope.
+The ODRL model itself is defined in RDF, but does not define the policy target further than the use
+of the `odrl:target` or `odrl:hasPolicy` predicates. Where this allows for the definition of policies
+over external resources defined by the `odrl:target` predicate, it runs into the problem of RDF being
+non-specific as to what constitutes the boundary of a URI, further than the result of its dereferencing.
 
+We see that in both these cases, the definition of metadata needed to place trust in data and enforce usage 
+restrictions proves insufficient for practical use in RDF ecosystems to define context restrictions over 
+exchanged information natively in the RDF data model.
 
-With the `RDF Context Associations` approach, we make a deliberate choice for Named Graphs,
-based on our work presented at [ESWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ESWC/demo/paper.pdf),
+However, approaches of indicating the boundary of statements to (sets of) statements in RDF have been proposed, 
+notably through reification in RDF 1.0, named graphs in RDF 1.1 and recently triple terms planned with 
+the RDF 1.2 release. These RDF-native approaches aim at defining a target statement (reification and
+triple terms) or graph of statements (named graphs) that can be referenced from other triples. 
+However, their introduction in the RDF domain model did not provide a uniform interpretation of the
+resulting RDF data in the case of reification and named graphs. This aspect is currently being worked 
+out for Triple Terms for the RDF 1.2 release by the working group.
+
+However, as context information is mainly targeted at sets of other statements in RDF, 
+a naive approach of associating a set of `n` context statements with a set of `m` target
+statements incurs a `n * m` cost of total statements when targeting single statements.
+To avoid having to work around this issue by defining collection-objects of reified triples
+or triple terms, for this specification we base ourselves on RDF Named Graphs as the basis
+of our Context Association approach.
+This is a deliberate choice for Named Graphs, based on our work presented at [ESWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ESWC/demo/paper.pdf),
 as well as unpublished work submitted to [ISWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ISWC/paper.pdf),
 where we show how named graphs make most sense to provide the above requirements compared to triple terms or reification approaches.
+
+TODO: fix ISWC Link with arxiv link
 
 
 <div class="example">
@@ -70,6 +96,20 @@ _:dataGraph;
     dcterms:created "2021-01-01"^^xsd:date.
 ```
 </div>
+
+
+
+
+
+To make sure a proposed approach guarantees a uniform interpretation of statements
+expressed over other sets of statements in RDF, we must be able to guarantee the 
+following requirements: 
+    1. We can define a set of statements in RDF that can be unambiguously referenced from within the local scope;
+        meaning that the reference to the set of statements must UNIQUELY define that statement set for clients interpreting the data.
+    2. We can define a set of statements that is closed to the local RDF scope;
+        meaning the defined set of statements can be shielded against references by sources external to the local scope.
+
+
 
 With the above example, we showcase the main design choices
 made to model local statement references in RDF: 

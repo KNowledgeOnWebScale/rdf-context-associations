@@ -195,8 +195,9 @@ CONSTRUCT { ?s ?p ?o }
 WHERE GRAPH <targetIdentifier> {?s ?p ?o }
 ``` 
 Note that not all systems will inherently support the evaluation of a SAPRQL 
-`GRAPH` that makes use of a blank node identifier, in these cases skolemized 
-IRIs will need to be used in the local graph store to ensure correct retrieval
+`GRAPH` that makes use of a blank node identifier, depending on the graph store
+and SPARQL engine used. In cases this is not supported, skolemized IRIs can be used 
+as an alternative to blank nodes in the local graph store to ensure correct retrieval
 of the target triples.
 </div>
 
@@ -621,13 +622,11 @@ _:g4 {
     _:policy 
         odrl:permission [
             odrl:target _:g1 _:g2 _:g3;
-            odrl:action odrl:Read;
+            odrl:action odrl:Use;
             odrl:assigner <http://people.org/Bob>;
             odrl:assignee <http://medical.org/Practitioner>.
         ].
 }
-
-
 
 _:g5 {
     # signature of metadata graph by data space
@@ -658,7 +657,43 @@ _:g5 {
 }
 
 ```
+
+The practicioner can then now evaluate based on this trust envelope if a user is of age: 
+
+```sparql
+CONSTRUCT { ?userId ex:isOfAge ?ofAge }
+WHERE {
+    # Query data requirements
+    ?dataGraph { ?userId foaf:age ?age }
+    # Query policy requirements
+    ?policyGraph { 
+        ?dataGraph odrl:hasPolicy ?policy.
+        ?policy odrl:permission ?permission.
+        ?permission odrl:action odrl:use.
+    }
+    # Ensure data is signed by government
+    ?dataSignatureGraph {
+        ?dataGraph sec:proof ?dataSignature.
+        ?dataSignature a sec:DataIntegrityProof;
+            sec:issuer ?govIssuer;
+            sec:validUntil ?validUntil1.
+    }
+
+    # Ensure policy is signed by user
+    ?dataSignatureGraph {
+        ?policyGraph sec:proof ?policySignature.
+        ?policySignature a sec:DataIntegrityProof;
+            sec:issuer ?userId;
+            sec:validUntil ?validUntil1.
+    }
+
+    BIND(?age > 18 AS ?ofAge)
+    FILTER(STRSTARTS(STR(?govIssuer), "https://government.belgium/issuers/"))
+    FILTER ( ?validUntil > xsd:date(NOW()) )
+} 
+```
 </div>
+
 
 
 

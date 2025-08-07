@@ -1,0 +1,235 @@
+<pre class='metadata'>
+Title: RDF Context Associations Speficiation
+Shortname: RDF CA Spec
+Level: none
+Status: LD
+Repository: KNowledgeOnWebScale/rdf-context-associations-spec
+URL: https://knowledgeonwebscale.github.io/rdf-context-associations-spec/
+Editor: Ruben Dedecker, IDLab - Ghent University, ruben.dedecker@ugent.be
+Editor: Pieter Colpaert, IDLab - Ghent University, https://pietercolpaert.be
+Abstract: This specification introduces the RDF Context Associations approach to the management of local references in RDF data for Web ecosystems built on RDF data.
+Markup Shorthands: markdown yes, css no
+</pre>
+<!-- Warning: Not Ready -->
+<!-- This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems. -->
+
+<!-- useful sources? -->
+<!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
+<!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
+<!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
+
+Introduction {#intro}
+=====================
+
+Issue: do we keep the Blank Node concept, or from a usability standpoint choose for skolemized identifiers `.well-known/genid/...` across the board?
+
+This specification introduces RDF Context Associations as an approach for the management of
+contextualized RDF data in Web ecosystems. Recent initiatives pushing data spaces and similar 
+initiatives for the management and exchange of information in Web ecosystems impose a need for
+the management of contextual information in RDF data.
+With this specification, we address an observed lack of support for uniform management of contextual
+information across RDF ecosystems, for which we focus on the generation, exchange, storage and integration
+of combined data and contextual meta-information within the RDF data model, pushing for handling context
+as a first-class citizen in the data management of Web ecosystems, to maximize potential for integration 
+and reuse of data.
+
+Envisioned use-cases of our approach include: 
+    * attaching usage policies in the form of ODRL/DPV descriptions to a set of triples
+    * signing sets of triples with a verifiable signature 
+    * structuring trust envelopes
+    
+
+<div class="example">
+An example association of a set of contextual information accompanying an RDF graph. 
+We want to assign an origin of a set of statements to the user personal data space:
+```turtle
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+_:dataGraph {
+    <http://people.org/ruben> foaf:name "Ruben";
+        foaf:age 28.
+}
+_:provenanceGraph {
+    dcterms:source <http://dataspaces.org/ruben>;
+    dcterms:creator <http://people.org/ruben>;
+    dcterms:created "2021-01-01"^^xsd:date.
+}
+```
+</div>
+
+Defining local boundaries with Named Graphs {#named-graphs}
+===========================================================
+
+Based on prior work presented at [ESWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ESWC/demo/paper.pdf),
+as well as unpublished work submitted to [ISWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ISWC/paper.pdf),
+we focus on named graphs as the prefered approach for defining local boundaries in RDF datasets, 
+under which we understand Web resources, graph databases, RDF resources and all other RDF storage 
+approaches that result in a local sets of RDF quads.
+
+Issue: fix ISWC Link with arxiv link
+
+
+
+The Context Association data model {#ca-data-model}
+==================================================
+
+The Context Association (CA) data model, is a data model to define 
+local interlinking sets of data as named graphs in an RDF Dataset,
+that is evaluated through SPARQL to allow combined querying of
+data and metadata.
+
+The CA model is based on the following principles:
+- Every set of RDF triple statements is defined within *some* context.
+- Integration of statements is fully dependent on the context in which they are defined.
+- Any implicit context assigned to a resource or named graph, can be made explicit in the RDF data model.
+
+Based on these principles, the CA model enforces the following requirements as the basis of its data model: 
+- Statements MUST be defined only as part of a named graph, never in the default graph.
+- Named graphs MUST be defined with either a blank node identifier, or with a skolemized identifier using the `.well-known/genid/` prefix to enable external references and late context binding.
+
+
+Conversion Algorithm {#conversion}
+==================================
+
+The target of the Context Association specification is to be able to 
+annotate any RDF data with associated context information that is portable
+with the data to maximize its potential for integration and reuse.
+
+To this end, we defined an annotation algorithm that can be applied to any RDF data
+to convert it into a CA-compliant data model over which context associations can be defined.
+
+The conversion of an RDF dataset without named graphs into the Context Association data model,
+requires only the nesting of the statements contained in its default graph into a named graph
+defined with a blank node or skolem graph name identifier.
+
+The conversion of an RDF dataset that contains named graphs, requires the following approach: 
+
+1. For all named graphs in the source data that have a graph name identifier `I` that is neither a blank node nor skolem identifier, relabel the graph name to a new blank node or skolem identifier `I'`.
+2. For each statement in the data source that makes use the identifier `I` of one of these graphs, **decide** if this the identifier is used as a reference to the named graph, or as a reference to the resource defined by identifier `I`. In case the reference is to the named graph, relabel the identifier in the statement to `I'`.
+3. For all statements in the default graph, nest these statements in a new named graph defined with a blank node or skolem identifier `G`.
+
+While this conversion is straightforward, the interpretation of the graph name identifier is not specified in the RDF specification,
+leading to a decision needing to be made in step 2 that is inherent to the data model in which the source data is defined.
+
+<div class="example">
+The following example illustrates a case where the graph name identifier is both used as 
+a reference to a resource, and a reference to the local named graph, where it serves as
+an implicit context for the contained statements. This example clearly indicates the 
+difficulty of automating this decision if the source data model is not known.
+
+```turtle
+@prefix ex: <http://example.org/ns#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+<http://dataspace.org/Bob/resource1> a rdf:Resource.
+
+_:retrieval a ex:Retrieval;
+    ex:hasContents <http://dataspace.org/Bob/resource1>.
+
+<http://dataspace.org/Bob/resource1> {
+    ex:statement1 ex:property "value1" .
+    ex:statement2 ex:property "value2" .
+}
+``` 
+Processing the above graph, we have two references to the graph name 
+`<http://dataspace.org/Bob/resource1>`. The first statement indicating
+this identifier to be a resource, refers to the original URI. 
+This identifiers SHOULD NOT be relabeled, as this type definition is
+defined on the specific identifier. 
+In the retrieval entity, the reference to `<http://dataspace.org/Bob/resource1>`
+is used as a reference to the graph contents. In this case, the identifier SHOULD
+be relabeled to remain consistent in the semantics of the resulting graph. 
+```turtle
+@prefix ex: <http://example.org/ns#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/>.
+@prefix sd: <http://www.w3.org/ns/sparql-service-description#>.
+
+<http://dataspace.org/Bob/resource1> a rdf:Resource.
+
+_:retrieval a ex:Retrieval;
+    ex:hasContents _:graph.
+
+_:graph {
+    ex:statement1 ex:property "value1" .
+    ex:statement2 ex:property "value2" .
+}
+
+# Explicit contextualization
+_:graph a rdfg:Graph, sd:NamedGraph;
+    prov:wasDerivedFrom <http://dataspace.org/Bob/resource1>.
+``` 
+</div>
+
+Publisher Behavior {#publisher}
+===============================
+
+This section defines how a data publisher can adhere to the context associations specification,
+aiming at maximizing the integration potential and usability of published data, while minimizing 
+intrusion in existing workflows and data management practices of RDF ecosystems.
+
+## SPARQL endpoint ## {#publisher-sparql}
+A CA publisher providing a SPARQL endpoint over its internal knowledge graph,
+can freely allow the internal data model to be queried through SPARQL.
+
+<!-- protection of internals in case of skolem IRIs -->
+The publisher MAY choose to relabel skolem identifiers in the internal knowledge graph
+to blank nodes to protect its internal data model and disallow external actors from referencing internal context.
+
+<!-- support for non-ca clients -->
+Additionally, the publisher MAY choose to wrap SPARQL queries that do not make use of the `GRAPH` keyword
+in a `GRAPH ?g`, as shown in [the example below](#example_query). During this process, they are free to
+federate this relabeling over all contained graphs, or to match the query at the level of individual contained graphs.
+
+Issue: Check the SPARQL service definitions ontology. Can we advertise this use of named graphs from here?
+
+<div class="example" id="example_query">
+An example of a query relabeling to map a naive query to the CA data model.
+```sparql
+CONSTRUCT { BGP }
+WHERE { BGP }
+```
+may be relabeled to
+```sparql
+CONSTRUCT { BGP }
+WHERE { 
+    GRAPH ?g { BGP} 
+}
+```
+or federated over the contained graphs
+```sparql
+CONSTRUCT { BGP }
+WHERE { 
+    GRAPH ?g1 { bgp_triple_1 } 
+    GRAPH ?g2 { bgp_triple_2 } 
+    GRAPH ?g3 { bgp_triple_3 } 
+}
+```
+</div>
+
+## Resource Publishing ## {#publisher-resource}
+Resources published MUST adhere to the Context Associations data model.
+
+<!-- support for non-ca clients -->
+A publisher MAY choose to duplicate statements in the default graph 
+to support clients that cannot process named graphs present in the content.
+
+
+
+Client Behavior {#client}
+=========================
+
+##  ## {#t1}
+weq
+
+## Processing incoming RDF data ## {#t2}
+qew
+
+## Processing incoming RDF data ## {#t3}
+qwqe
+
+

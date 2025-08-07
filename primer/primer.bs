@@ -98,9 +98,6 @@ _:dataGraph;
     dcterms:creator <http://people.org/ruben>;
     dcterms:created "2021-01-01"^^xsd:date.
 ```
-Storing the contextual information in the default graph is a valid approach, 
-however comes with the downside of not being able to recursively reference 
-the created contextual information with additional policy requirements or signatures.
 </div>
 
 

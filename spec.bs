@@ -466,10 +466,8 @@ over the graph containing the original signature and all it's metadata.
 
 <div class="example">
 ```sparql
-CONSTRUCT {
-    ?s ?p ?o.
-
-} WHERE {
+CONSTRUCT { ?s ?p ?o } 
+WHERE {
     ?dataGraph { ?s ?p ?o. }
     ?signatureGraph {
         ?dataGraph sec:proof ?signature.
@@ -482,6 +480,7 @@ CONSTRUCT {
     FILTER ( ?validUntil > xsd:date(NOW()) )
 }
 ```
+</div>
 
 Signature evaluation can happen through SPARQL. However, the validation of the signature needs 
 to happen in a pre-processing step. This can be integrated by removing signatures that are not 

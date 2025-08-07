@@ -1,19 +1,16 @@
 <pre class='metadata'>
 Title: RDF Context Associations
 Shortname: RDF Context Associations
-Warning: Not Ready
 Level: none
 Status: LD
 Repository: KNowledgeOnWebScale/rdf-context-associations
 URL: https://knowledgeonwebscale.github.io/rdf-context-associations/
 Editor: Ruben Dedecker, IDLab - Ghent University, ruben.dedecker@ugent.be
 Editor: Pieter Colpaert, IDLab - Ghent University, https://pietercolpaert.be
-Abstract: This specification describes the definition of general context associations in RDF using RDF graphs
+Abstract: This specification introduces RDF Context Associations, a method for unambiguously referencing and interlinking sets of RDF statements in a way that preserves contextual metadata—such as provenance, policies, and digital signatures—within the RDF data model. While existing approaches like RDF reification, named graphs, and RDF-star address parts of this need, none provide a consistent, interpretable mechanism that are required for data sharing, storage and integration across Web ecosystems. This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems.
 Markup Shorthands: markdown yes, css no
 </pre>
-
-Abstract: 
-This specification introduces RDF Context Associations, a method for unambiguously referencing and interlinking sets of RDF statements in a way that preserves contextual metadata—such as provenance, policies, and digital signatures—within the RDF data model. While existing approaches like RDF reification, named graphs, and RDF-star address parts of this need, none provide a consistent, interpretable mechanism that are required for data sharing, storage and integration across Web ecosystems. This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems.
+<!-- Warning: Not Ready -->
 
 <!-- useful sources? -->
 <!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
@@ -22,7 +19,12 @@ This specification introduces RDF Context Associations, a method for unambiguous
 
 Introduction {#intro}
 =====================
-With this RDF Context Associations specification, we aim to provide an RDF-native 
+
+Issue: Should we rescope everything to skolem identifiers? And enforce that incoming graphs 
+MAY NEVER clash with existing skolem identifiers used as graph names in the local scope?
+
+
+Through the RDF Context Associations specification, we aim to provide an RDF-native 
 approach for modeling and interpreting target local references of sets of statements
 in the RDF data model. 
 As the need for management of contextual information is becoming increasingly pressing
@@ -35,8 +37,7 @@ on which the potential for integration and reuse of data is relying.
 Investigating the most prominent models, we see that the space for sigantures has been mainly
 geared towards support for [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/),
 and the policy space has mainly seen adoption of [ODRL](https://www.w3.org/TR/odrl-model/).
-However, these models come with downsides, as they are not designed for use within the RDF
-data model. 
+However, these models come with downsides, as they are not designed for use within RDF-native data spaces.
 
 The Verifiable Credentials specification makes use of the resource JSON structure
 of credentials to define the closure over which a signature is defined, which makes it incompatible
@@ -76,7 +77,7 @@ This is a deliberate choice for Named Graphs, based on our work presented at [ES
 as well as unpublished work submitted to [ISWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ISWC/paper.pdf),
 where we show how named graphs make most sense to provide the above requirements compared to triple terms or reification approaches.
 
-TODO: fix ISWC Link with arxiv link
+Issue: fix ISWC Link with arxiv link
 
 
 <div class="example">
@@ -96,11 +97,52 @@ _:dataGraph;
     dcterms:creator <http://people.org/ruben>;
     dcterms:created "2021-01-01"^^xsd:date.
 ```
+Storing the contextual information in the default graph is a valid approach, 
+however comes with the downside of not being able to recursively reference 
+the created contextual information with additional policy requirements or signatures.
 </div>
 
 
 Defining local targets as blank node graphs {#named_graph}
 ===============================================================================
+
+The use of identifiers is key in the Resource Description Framework,
+supporting its goal to describe resources on the Web through describing
+information about them using triple statements.
+However, as the use of RDF shifted from descriptions to use in data spaces,
+their use extends beyond simple descriptions of resources to carriers of 
+data and metadata as drivers for interoperability on Web scale.
+
+To define such exchanges of data and metadata, it is becoming increasingly 
+important to define boundaries in the open world assumption core to the RDF 
+data model. To define metadata, certainly for cases such as policies and signatures, 
+a closed world assumption is needed for the targets over which they are defined,
+where the signatures are used to enforce immutability of their target data.
+
+The RDF data model is only able to define boundaries in the form of graphs that
+contain triple statements, disregarding reification, rdf-star and triple terms
+that describe singular triples. Graphs can be defined locally in RDF datasets
+(the local RDF scope) in the form of named graphs, and at the resource level.
+The RDF resource (local scope) forms a boundary for its default graph, 
+which in turn can contain named graphs which define internal boundaries over
+sub-graphs in the resource.
+
+Making use of resource boundaries in defining statements that reference remote
+resources as URIs is useful, the integration of data from multiple sources 
+at a local level, one of the goals of data spaces where data is retrieved 
+from multiple sources, is made difficult by the merging of all statements 
+in the local knowledge graph. Where this can be resolved by solutions that 
+go outside the RDF data model, we disregard such solutions here, as they 
+are complicate exchange, storage and integration of data on a wider scale, 
+as well as losing the ability to query over locally stored data through
+standardized approaches such as SPARQL.
+
+Alternatively, the use of named graphs allows for the definition of multiple
+boundaries of sets of triples in the local scope. Being a core part of the 
+RDF 1.1 specification, this is supported for storage of data, exchange of data 
+and the integration of data through RDF-native approaches such as SPARQL.
+
+## Setting requirements for target references in the local scope ## {#requirements}
 
 To provide a uniform modeling approach in RDF for referencing content local
 to the RDF dataset, we need to be able to provide some guarantees that ensure
@@ -108,7 +150,7 @@ the usability of the approach for the exchange, storage and interpretation of
 data and associated context in RDF throughout the Web ecosystems throughout 
 their lifecycle.
 
-TODO: RDF dataset link to definition in spec
+Issue: RDF dataset link to definition in spec
 
 This imposes a requirement that:
 *the modeling approach must allow the definition of a finite set of RDF statements in the local RDF scope, that is unambiguous in reference and contained to the local RDF scope* 
@@ -137,33 +179,35 @@ as additional types or properties defined on the graph name can cause type confu
 especially in cases where data is sourced from an original that uses the graph name for specific indexing of triples,
 where such double typing of graph names may be more likely to occur.
 
+## Enforcing a uniform interpretation of graph names through SPARQL ## {#sparql} 
+
 The only way we can enforce a uniform interpretation of an identifier as the graph name of a named graph,
 is through the use of the `GRAPH` keyword defined in the SPARQL specification.
 This `GRAPH` keyword can be used to bind a variable to an identifier that can 
 only be interpreted as the graph name of a named graph in the local RDF scope.
 
-<div class="example" id="sparql-binding">
-SPARQL provides tha ability to bind named graphs via their graph name in the local scope (e.g. using the variable ?g in the example).
+<div class="note" id="sparql-definition">
+The interpretation of a local target `T` of a context definition MUST take the form
+of a SPARQL Construct query retrieving all triples contained in the named graph
+with graph name `T` as follows: 
 ```sparql
-GRAPH ?g1 { ... }
-GRAPH ?g2 { ?g2 ?p ?o }
-
+CONSTRUCT { ?s ?p ?o }
+WHERE GRAPH <targetIdentifier> {?s ?p ?o }
 ``` 
+Note that not all systems will inherently support the evaluation of a SAPRQL 
+`GRAPH` that makes use of a blank node identifier, in these cases skolemized 
+IRIs will need to be used in the local graph store to ensure correct retrieval
+of the target triples.
 </div>
 
-In the [SPARQL example](#sparql-binding), the `GRAPH` keyword is used to bind the variable `?g`
-to the graph name of a named graph in the local RDF scope, allowing this binding to be used
-for the unambiguous association of additional information to this target graph.
-This provides us with the certainty that
-*the definition of a named graph with a graph name N and an RDF Graph G, will only bind a subset of G for a Basic Graph Pattern matched on the Graph G using the `GRAPH` keyword`*.
-This provides us with certainty that the processing of the Context Associations defined using named graphs 
-can be done unambiguously throughout Web ecosystems, by relying on the SPARQL interpretation of named graphs in RDF.
-
+<!-- This reliance on the SPARQL `GRAPH` keyword ensures a correct interpretation of 
+the local metadata target, and consequently a uniform interpretation of the 
+Context Association.
 Building on this, the concept of a `blank node graph` is the definition of a named graph in RDF 
 where a blank node is used as its graph name identifier. By restricting the graph name definition to a blank node identifier, 
-the resulting named graph can only be referenced from the local RDF scope due to blank-node relabeling in RDF.
+the resulting named graph can only be referenced from the local RDF scope due to blank-node relabeling in RDF. -->
 
-TODO: reference blank node relabeling
+<!-- TODO: reference blank node relabeling -->
 
 
 <div class="example">
@@ -212,91 +256,120 @@ in combination with other RDF data without changing its interpretation due to it
 and reliance on blank-node relabeling to prevent graph merging. 
 
 
-TODO: add section on processing source RDF into the Context Associations format.
-
-<!-- 
-1. Any added set of statements that is contained in the default graph of a resource being added to the RDF Dataset, is wrapped in a named graph. Note that unless metadata is added to indicate this named graph encapsulates statements originally contained by the defualt graph in some capacity, this knowledge will be lost through this conversion.
-2. Any added named graph (inluded the one created above) must have its name be a blank node identifier (or a skolem identifier in case internal systems require a directl link to the graph). This ensures (i) the uniqueness of the graph name, (ii) that no external references to this named graph can exist, and (iii) partially clears up confusion about the meaning of a graph identifier, though this might not be enough if this blank node is defined in other locations local to the resource to another capacity than just the graph name. For this edge case, we cannot enforce any concrete rules with regards to the creation of the RDF dataset. 
-3. To ensure a uniform interpretation, we rely on the SPARQL specification to enforce the intepretation of named graphs from the RDF Dataset when interpreting the resulting Contextualized Knowledge Graph. The SPARQL specification does not define a specific relation between the graph name and RDF graph contained by a named graph, though it provides the `GRAPH` keyword that when provided with a name variable, provides a direct reference to the associated RDF graph. We make use of this interpretation to enforce a consistent interpretation of context associations in RDF that use named graphs with blank node graph names.   
- -->
-
-Interpreting target references in the local RDF scope {#references}
+Practical considerations in the use of blank nodes and skolem identifiers {#references}
 ===============================================================================
 
+The use of blank node identifiers is central to the concept of ensuring local closure 
+of context associated to selections of data. As context definitions are inherently local
+to the data over which they are defined, this is desired behavior. 
 
-Todo: make use of tables to make content more palletable
+However, this imposes a requirement on making both data and associated context definitions 
+inseparable from a practical standpoint, as blank node relabeling makes late binding 
+of context do sent data by external sources impossible, only local intervention can 
+re-connect blank nodes in the local RDF scope.
 
+The use of skolem identifiers mitigates these issues, while ensuring unique generation of 
+identifiers. However, the use of skolem identifiers comes with the practical consideration 
+that in addition to referencing local graphs, external sources can define data using the 
+same skolem identifiers as graph name, leading to potentially unwanted graph merges.
+For these cases, incoming named graphs with graph names identical to named graphs contained
+in the local RDF scope should be either rejected or renamed to prevent identifier clashes.
 
-## Identifier types and their semantics ## {#identifier_types}
+A middle ground can be found in the enforcement of a relabeling step for outgoing data, 
+where exchanged Context Associations relabel internally defined and newly created graphs
+with a mapping that preserves associations between outgoing named graphs, 
+while not exposing graphs internal to the local data system. This way, coherent associations
+can be exchanged and integrated through late binding at the receiver side, while mitigating 
+the ability of external actors to interact with locally stored graph name identifiers that 
+did not originate from their systems.
 
-As the interpretation of references and their intended boundaries are core requirements 
-when working with contextual metadata, causing practical concerns when evaluating 
-cryptographic signatures over data, and heavy legal concerns when evaluating the 
-boundary of policy metadata, the interpretation of a target boundary is of paramount 
-importance when processing RDF data.
-
-For the RDF Context Associations interpetation, we impose the following interpretations: 
-
-1. A HTTP(S) URL -- The processing of such a Web URL must be interpreted as **the resource retrieved by dereferencing the URL**. Even if additional information is provided about the resource in the local scope, *unless it is explicitly known that the referenced scope is exactly the one being processed though having dereferenced the referenced resource*. Any signature, policy or other reference to this URI should be interpreted as defined over this resource representation as dereferenced from this source.
-
-2. A resource HTTP(S) with hash extension -- The presence of the hash --only when targeting an RDF resource-- indicates the targeting of an embedded entity that corresponds to the given hash value in the dereferenced document. Only if this hashed URI corresponds to a graph name in the document, we enforce the interpretation of the URI to the accompanying RDF Graph.
-
-Issue: this raises the same issue as the local blank nodes in interpreting the reference. We cannot really gloss over this sadly. Maybe we can infer the following: **Any document native identifier, including hashed local URIs and blank nodes, are interpreted as local entities, and when used as a graph name in that scope will automatically be interpreted as the reference to that graph, and NOT to any statements in which the identifier is used.**
-
-3. A non-HTTP URI -- The processing of non-HTTP URIs are unknown in scope, and require additional knowledge to be interpreted. An example is the use of skolemized identifiers, which can be used in local systems to reference named graphs, through prior knowledge of their existence and use within the system.
-
-4. Blank node identifiers -- Blank Node identifiers are always interpreted as local to the current scope that is being processed. Hence, the targeting of a blank node indicates the targeting of an entity in the local scope. Only if this blank node identifier corresponds to a graph name in the scope, we enforce the interpretation of the blank node as the reference of the accompanying RDF Graph.
-
-Issue: Im going outside the SPARQL boundaries here. Probably should disregard ALL references that are not blank nodes.
-
-
-## Edge cases and local scoping ## {#edge_cases}
-
-Todo: this section
-
-
-Enforcing interpretation of the graph name {#name_interpretation}
+Defining Context Associations over any RDF source data {#conversion}
 ===============================================================================
 
-In the RDF specification, the relation between the graph name and RDF graph that constitute a named graph is not defined.
-Because of this, we cannot natively define a semantic interpretation for any URI or blank node identifier in an RDF document,
-and indicate that this is the graph name of a named graph.
-There are multiple approaches that could be taken to enforce this interpretation, 
-such as specifically typing this identifier as a graph name. 
-However, this still opens up the possibility of misinterpretation, 
-as additional types or properties defined on the graph name can cause type confusion, 
-especially in cases where data is sourced from an original that uses the graph name for specific indexing of triples,
-where such double typing of graph names may be more likely to occur.
+The creation of context information should support any source RDF data.
+With the inclusion of named graphs in the RDF specification, the undefined
+semantics for named graphs has left their interpretation open, leading to 
+multiple conflicting uses for both (i) the meaning of their graph name and
+(ii) the truth value of their contained RDF graph.
 
-The only way we can ensure a uniform interpretation of the graph name, 
-is through the SPARQL specification, which defines the `GRAPH` keyword
-to refer to the graph name of a named graph in the local scope.
-In SPARQL query processing, the GRAPH construct requires that the graph name variable is bound to a named graph identifier, i.e., a URI or blank node that names a graph in the dataset.
+With the Context Association specification, we enforce the meaning of the graph name (i)
+through the use of SPARQL query semantics as the reference to the RDF Graph of the named graph.
+This requires data sources where the graph name is used with a specific contextual meaning 
+with regards to its graph name identifier, to convert this meaning into specific contextual
+information defined over a newly generated graph identifier, instead of the original graph name.
+To what extent references to this original identifier need to be relabeled to the newly defined 
+graph name identifier needs to be defined by the data source, as depending on the identifier interpretation, 
+relabeling either does or does not need to occur.
 
 <div class="example">
-SPARQL provides tha ability to bind named graphs via their graph name in the local scope (e.g. using the variable ?g in the example).
-```sparql
-GRAPH ?g { ... }
+A data source using the graph name to keep track of the origin of contained statements, 
+must relabel the graph name to either a blank node or skolem identifier, after which
+this contextual interpretation of the graph name is concretely defined as metadata over
+the newly generated graph name identifier.
+
+```turtle
+@prefix ex: <http://example.org/ns#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+
+<http://dataspace.org/Bob/resource1> a rdf:Resource.
+
+_:retrieval a ex:Retrieval;
+    ex:hasContents <http://dataspace.org/Bob/resource1>.
+
+<http://dataspace.org/Bob/resource1> {
+    ex:statement1 ex:property "value1" .
+    ex:statement2 ex:property "value2" .
+}
+``` 
+Processing the above graph, we have two references to the graph name 
+`<http://dataspace.org/Bob/resource1>`. The first statement indicating
+this identifier to be a resource, refers to the original URI. 
+This identifiers SHOULD NOT be relabeled, as this type definition is
+defined on the specific identifier. 
+In the retrieval entity, the reference to `<http://dataspace.org/Bob/resource1>`
+is used as a reference to the graph contents. In this case, the identifier SHOULD
+be relabeled to remain consistent in the semantics of the resulting graph. 
+
+Regarding (ii) the truth value intended by an internal graph, this interpretation can be 
+enforced by duplicating graph contents in the default graph when exchanging data as Context Associations. 
+This allows the recipient to process the incoming statements both as asserted, and as part of a Context Association.
+
+On making the context explicit as Context Associations, the above graph becomes:
+
+```turtle
+@prefix ex: <http://example.org/ns#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/>.
+@prefix sd: <http://www.w3.org/ns/sparql-service-description#>.
+
+<http://dataspace.org/Bob/resource1> a rdf:Resource.
+
+_:retrieval a ex:Retrieval;
+    ex:hasContents _:graph.
+
+_:graph {
+    ex:statement1 ex:property "value1" .
+    ex:statement2 ex:property "value2" .
+}
+
+# Explicit contextualization
+_:graph a rdfg:Graph, sd:NamedGraph;
+    prov:wasDerivedFrom <http://dataspace.org/Bob/resource1>.
 ``` 
 </div>
 
-This provides an unambiguous approach to refer to graph names within SPARQL queries, 
-even if RDF itself lacks a formal semantic for defining graph names.
 
-A consequence of this, is that this use of referencing graphs using RDF 
-is fully reliant on the SPARQL interpretation of the source RDF, 
-or other implementations that are compliant with this interpretation.
+To process source data that already includes named graphs, 
+the above conversion needs to take into account the references 
+to named graphs in the source data. Similar to the above conversion,
+these references need to be evaluated, and relabeled where necessary.
+Provenance, policies and signatures defined over all source data, 
+must be duplicated or atomized (see ODRL atomization) to target 
+each resulting graph individually. 
 
-Therefor, any metadata definition MUST process the contents of a referenced URI
-through a SPARQL evaluation of the target named graph as follows:
 
-<div class="example">
-Example SPARQL query to retrieve the contents of a named graph by its graph name.
-```sparql
-CONSTRUCT { ?s ?p ?o }
-WHERE { GRAPH ?graph_name { ?s ?p ?o } }
-``` 
-</div>
 
 Designing graph-based signatures {#signatures}
 ========================================
@@ -353,11 +426,11 @@ _:g0 {
 
 # sign data graph
 _:g1 {
-    _:g0 sec:proof _:dataSignature;
+    _:g0 sec:proof _:signature1;
     _:signature1 
         a sec:DataIntegrityProof;
         sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2021-11-13T18:19:39Z"^^xsd:dateTime;
+        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
         sec:verificationMethod <https://university.example/issuers/14#key-1>;
         sec:proofPurpose sec:assertionMethod;
         sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz".
@@ -372,7 +445,7 @@ _:g3 {
     _:signature2 
         a sec:DataIntegrityProof;
         sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2021-11-13T18:19:39Z"^^xsd:dateTime;
+        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
         sec:verificationMethod <https://university.example/issuers/14#key-1>;
         sec:proofPurpose sec:assertionMethod;
         sec:proofValue "adad123efv434r5200...dqed2t44v43das".
@@ -380,12 +453,49 @@ _:g3 {
 ```
 </div>
 
-Issue: For querying purposes, it should be possible to evaluate a signature on its issuer quickly to validate contents based on signatures. VC has the same issue, in that the verification method should be a key that is owned by the issuer. (This is confirmed by resolving the issuer’s DID to its DID Document and checking that the verification method is listed under assertionMethod or a similar verification relationship. Same can be done for WebIDs. Add this to the spec.)
+The issue of signing the issuer and other metadata associated with the signature
+causes some practical considerations when creating signatures at the level of individual 
+named graphs in the RDF data model.
+
+For the definition of the signature issuer, we can fall back on the requirement to associated
+the issuer with the verificationMethod stated in the signature, in this case a public key, 
+that must be linked by the issuer on dereferencing their profile information.
+Other metadata however can be added to the signature, but requires a recursive signature definition
+over the graph containing the original signature and all it's metadata. 
+
+<div class="example">
+```sparql
+CONSTRUCT {
+    ?s ?p ?o.
+
+} WHERE {
+    ?dataGraph { ?s ?p ?o. }
+    ?signatureGraph {
+        ?dataGraph sec:proof ?signature.
+        ?signature a sec:DataIntegrityProof;
+            sec:issuer <?issuer>;
+            sec:validUntil ?validUntil;
+            local:validated true.
+    }
+    FILTER(STRSTARTS(STR(?issuer), "https://university.example/issuers/"))
+    FILTER ( ?validUntil > xsd:date(NOW()) )
+}
+```
+
+Signature evaluation can happen through SPARQL. However, the validation of the signature needs 
+to happen in a pre-processing step. This can be integrated by removing signatures that are not 
+valid because they are outdated, cannot be verified, ..., or they can be explicitly marked as 
+validated in the internal system. As the signature does not inherently sign its own metadata, 
+in cases where a verified signature does not imply valid signature metadata, this can be enforced
+by requiring the signature graph itself to be signed and reflecting this in the data query.
 
 Creating graph-based policies {#policies}
 ========================================
 
-Todo: more formal definition. As well addition of policy constraints that target graphs for data requirements?
+The local definition of policies, especially the ones pertaining to usage restrictions defined
+over selections of data, is important to be uniformly understood throughout the ecosystem in 
+which they are defined and exchanged. 
+Here again, the interpretation of the policy target is the 
 
 The evaluation of policies over graphs also makes use of the SPARQL approach of finding the quads contained by the target graph.
 Note that for policy models such as ODRL, that atomize their policies over all targets, multiple target graphs can be indicated without changing the semantics of the policy.
@@ -488,7 +598,7 @@ _:g2 {
     _:g0 sec:proof [
     a sec:DataIntegrityProof;
             sec:cryptosuite "ecdsa-rdfc-2019";
-            sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
+            sec:created "2020-01-01T00:00:00.000Z"^^xsd:dateTime;
             sec:verificationMethod <https://university.example/issuers/14#key-1>;
             sec:proofPurpose sec:assertionMethod;
             sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
@@ -600,7 +710,11 @@ _:policyGraph {
 </div>
 
 
-Appendix A: RDF in the LLM era {#why}
+
+
+
+
+Appendix A: Why still focus on RDF? {#why}
 =====================================
 
 With current advances in Web systems, we see the envisioned Agents of the semantic Web 
@@ -623,3 +737,97 @@ for which industry-grade tooling support is available.
 To this end, we see a clear future for the integration of RDF data in Web ecosystems, 
 as a structured base language through which information and associated context is exchanged
 at the convergence point of both structured and unstructured processes.
+
+
+
+
+
+
+<!-- 
+
+Old stuff
+
+-->
+
+
+<!-- 
+Target references in the local RDF scope {#references}
+======================================================
+
+
+Todo: make use of tables to make content more palletable
+
+
+## Identifier types and their semantics ## {#identifier_types}
+
+As the interpretation of references and their intended boundaries are core requirements 
+when working with contextual metadata, causing practical concerns when evaluating 
+cryptographic signatures over data, and heavy legal concerns when evaluating the 
+boundary of policy metadata, the interpretation of a target boundary is of paramount 
+importance when processing RDF data.
+
+For the RDF Context Associations interpetation, we impose the following interpretations: 
+
+1. A HTTP(S) URL -- The processing of such a Web URL must be interpreted as **the resource retrieved by dereferencing the URL**. Even if additional information is provided about the resource in the local scope, *unless it is explicitly known that the referenced scope is exactly the one being processed though having dereferenced the referenced resource*. Any signature, policy or other reference to this URI should be interpreted as defined over this resource representation as dereferenced from this source.
+
+2. A resource HTTP(S) with hash extension -- The presence of the hash --only when targeting an RDF resource-- indicates the targeting of an embedded entity that corresponds to the given hash value in the dereferenced document. Only if this hashed URI corresponds to a graph name in the document, we enforce the interpretation of the URI to the accompanying RDF Graph.
+
+Issue: this raises the same issue as the local blank nodes in interpreting the reference. We cannot really gloss over this sadly. Maybe we can infer the following: **Any document native identifier, including hashed local URIs and blank nodes, are interpreted as local entities, and when used as a graph name in that scope will automatically be interpreted as the reference to that graph, and NOT to any statements in which the identifier is used.**
+
+3. A non-HTTP URI -- The processing of non-HTTP URIs are unknown in scope, and require additional knowledge to be interpreted. An example is the use of skolemized identifiers, which can be used in local systems to reference named graphs, through prior knowledge of their existence and use within the system.
+
+4. Blank node identifiers -- Blank Node identifiers are always interpreted as local to the current scope that is being processed. Hence, the targeting of a blank node indicates the targeting of an entity in the local scope. Only if this blank node identifier corresponds to a graph name in the scope, we enforce the interpretation of the blank node as the reference of the accompanying RDF Graph.
+
+Issue: Im going outside the SPARQL boundaries here. Probably should disregard ALL references that are not blank nodes.
+
+
+## Edge cases and local scoping ## {#edge_cases}
+
+Todo: this section 
+-->
+
+
+<!-- 
+Enforcing interpretation of the graph name {#name_interpretation}
+===============================================================================
+
+In the RDF specification, the relation between the graph name and RDF graph that constitute a named graph is not defined.
+Because of this, we cannot natively define a semantic interpretation for any URI or blank node identifier in an RDF document,
+and indicate that this is the graph name of a named graph.
+There are multiple approaches that could be taken to enforce this interpretation, 
+such as specifically typing this identifier as a graph name. 
+However, this still opens up the possibility of misinterpretation, 
+as additional types or properties defined on the graph name can cause type confusion, 
+especially in cases where data is sourced from an original that uses the graph name for specific indexing of triples,
+where such double typing of graph names may be more likely to occur.
+
+The only way we can ensure a uniform interpretation of the graph name, 
+is through the SPARQL specification, which defines the `GRAPH` keyword
+to refer to the graph name of a named graph in the local scope.
+In SPARQL query processing, the GRAPH construct requires that the graph name variable is bound to a named graph identifier, i.e., a URI or blank node that names a graph in the dataset.
+
+<div class="example">
+SPARQL provides tha ability to bind named graphs via their graph name in the local scope (e.g. using the variable ?g in the example).
+```sparql
+GRAPH ?g { ... }
+``` 
+</div>
+
+This provides an unambiguous approach to refer to graph names within SPARQL queries, 
+even if RDF itself lacks a formal semantic for defining graph names.
+
+A consequence of this, is that this use of referencing graphs using RDF 
+is fully reliant on the SPARQL interpretation of the source RDF, 
+or other implementations that are compliant with this interpretation.
+
+Therefor, any metadata definition MUST process the contents of a referenced URI
+through a SPARQL evaluation of the target named graph as follows:
+
+<div class="example">
+Example SPARQL query to retrieve the contents of a named graph by its graph name.
+```sparql
+CONSTRUCT { ?s ?p ?o }
+WHERE { GRAPH ?graph_name { ?s ?p ?o } }
+``` 
+</div>
+ -->

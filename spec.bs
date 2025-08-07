@@ -1,6 +1,6 @@
 <pre class='metadata'>
-Title: RDF Context Associations
-Shortname: RDF Context Associations
+Title: RDF Context Associations Primer
+Shortname: RDF CA Primer
 Level: none
 Status: LD
 Repository: KNowledgeOnWebScale/rdf-context-associations

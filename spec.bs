@@ -7,10 +7,11 @@ Repository: KNowledgeOnWebScale/rdf-context-associations
 URL: https://knowledgeonwebscale.github.io/rdf-context-associations/
 Editor: Ruben Dedecker, IDLab - Ghent University, ruben.dedecker@ugent.be
 Editor: Pieter Colpaert, IDLab - Ghent University, https://pietercolpaert.be
-Abstract: This specification introduces RDF Context Associations, a method for unambiguously referencing and interlinking sets of RDF statements in a way that preserves contextual metadata—such as provenance, policies, and digital signatures—within the RDF data model. While existing approaches like RDF reification, named graphs, and RDF-star address parts of this need, none provide a consistent, interpretable mechanism that are required for data sharing, storage and integration across Web ecosystems. This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems.
+Abstract: This primer introduces the concept RDF Context Associations, a method for unambiguously referencing and interlinking sets of RDF statements in a way that preserves contextual metadata—such as provenance, policies, and digital signatures—within the RDF data model. While existing approaches like RDF reification, named graphs, and RDF-star address parts of this need, none provide a consistent, interpretable mechanism that are required for data sharing, storage and integration across Web ecosystems. 
 Markup Shorthands: markdown yes, css no
 </pre>
 <!-- Warning: Not Ready -->
+<!-- This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems. -->
 
 <!-- useful sources? -->
 <!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->

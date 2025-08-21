@@ -1,7 +1,7 @@
 <!doctype html><html lang="en">
  <head>
   <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-  <title>RDF Context Associations Speficiation</title>
+  <title>RDF Graph-Based Data Model</title>
   <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
 <style data-fill-with="stylesheet">/******************************************************************************
  *                   Style sheet for the W3C specifications                   *
@@ -2016,7 +2016,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">RDF Context Associations Speficiation</h1>
    <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document,
-    <time class="dt-updated" datetime="2025-08-21">21 August 2025</time></span></h2>
+    <time class="dt-updated" datetime="2025-08-07">7 August 2025</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2033,7 +2033,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a>
 To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 21 August 2025,
+In addition, as of 7 August 2025,
 the editors have made this specification available under the
 <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
@@ -2079,21 +2079,24 @@ Parts of this work may be from another specification document.  If so, those par
   <main>
    <h2 class="heading settled" data-level="1" id="intro"><span class="secno">1. </span><span class="content">Introduction</span><a class="self-link" href="#intro"></a></h2>
    <p class="issue" id="issue-095429d1"><a class="self-link" href="#issue-095429d1"></a> do we keep the Blank Node concept, or from a usability standpoint choose for skolemized identifiers <code>.well-known/genid/...</code> across the board?</p>
-   <p>This specification introduces an approach for managing contextualized RDF data within the confines
-of an RDF dataset called RDF Context Associations. The aim is to enable the uniform management of 
-contextualized data in RDF Web ecosystems, through enabling the exchange, storage and integration 
-of combined data and associated context as RDF in these ecosystems.</p>
-   <p>Recent initiatives pushing data spaces and similar initiatives for the management and exchange
-of information in Web ecosystems impose a need for the management of contextual information in RDF data.
+   <p>This specification introduces RDF Context Associations as an approach for the management of
+contextualized RDF data in Web ecosystems. Recent initiatives pushing data spaces and similar 
+initiatives for the management and exchange of information in Web ecosystems impose a need for
+the management of contextual information in RDF data.
 With this specification, we address an observed lack of support for uniform management of contextual
 information across RDF ecosystems, for which we focus on the generation, exchange, storage and integration
 of combined data and contextual meta-information within the RDF data model, pushing for handling context
 as a first-class citizen in the data management of Web ecosystems, to maximize potential for integration 
 and reuse of data.</p>
-   <p>The envisioned use-cases for the proposed approach include:
-attaching usage policies in the form of ODRL/DPV descriptions to a set of triples, 
-signing sets of triples with a verifiable signature and the creation of trust envelope
-structures to model the exchange of information required for trust flows in the ecosystem.</p>
+   <p>Envisioned use-cases of our approach include:</p>
+   <ul>
+    <li data-md>
+     <p>attaching usage policies in the form of ODRL/DPV descriptions to a set of triples</p>
+    <li data-md>
+     <p>signing sets of triples with a verifiable signature</p>
+    <li data-md>
+     <p>structuring trust envelopes</p>
+   </ul>
    <div class="example" id="example-d88989a6">
     <a class="self-link" href="#example-d88989a6"></a>
 An example association of a set of contextual information accompanying an RDF graph. 
@@ -2245,7 +2248,6 @@ An example of a query relabeling to map a naive query to the CA data model.
     <p>or federated over the contained graphs</p>
 <pre class="language-sparql highlight"><c- k>CONSTRUCT</c-> <c- p>{</c-> BGP <c- p>}</c->
 <c- k>WHERE</c-> <c- p>{</c-> 
-
     <c- k>GRAPH</c-> <c- g>?g1</c-> <c- p>{</c-> bgp_triple_<c- mi>1</c-> <c- p>}</c-> 
     <c- k>GRAPH</c-> <c- g>?g2</c-> <c- p>{</c-> bgp_triple_<c- mi>2</c-> <c- p>}</c-> 
     <c- k>GRAPH</c-> <c- g>?g3</c-> <c- p>{</c-> bgp_triple_<c- mi>3</c-> <c- p>}</c-> 

@@ -1,5 +1,5 @@
 <pre class='metadata'>
-Title: RDF Context Associations Speficiation
+Title: RDF Context Associations Specification
 Shortname: RDF CA Spec
 Level: none
 Status: LD
@@ -17,6 +17,19 @@ Markup Shorthands: markdown yes, css no
 <!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
 <!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
+## Glossary
+
+
+
+| Term                      | Definition                                                                                                                                                        |
+|-------------------------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Context Association       | The association of contextual information to a **closed**, **local** target set of RDF statements encoded as a named graph. |
+| Context Statements        | The contextual statements (e.g., metadata, provenance, policy) of a context association that target a named graph in the local RDF scope. |
+| Named Graph               | An RDF 1.1 **named graph** (a set of triples identified by a graph name) used here to encapsulate target statements and keep their scope local.                   |
+| Blank Node Identifier     | An RDF **blank node** identifier, in this context mostly used as the name value of an RDF named graph.|
+| Content Hash (named graph)| A cryptographic **hash** of the canonicalized representation of a named graph, evaluated via RDF Dataset Canonicalization |
+| RDF Stream                | A stream of RDF data elements; see the W3C RDF Stream Processing Community Group for definitions and models.                                                      |
+
 
 
 Introduction
@@ -51,19 +64,19 @@ that a specific interpretation of the context definition with regards to the tar
 
 ## Closing the open world
 
-To solve the problem of exactly defining the sets of context statements and its targeted data,
+To solve the problem of exactly defining the sets of context statements and their targeted data,
 we need to restrict the open world interpretation of RDF to concrete and closed sets of statements
 that define exact sets of data statements and associated context statements, for which we use named graphs in RDF.
 
 To ensure these sets of statements remain closed in definition, exchange and processing of the data and context,
-graph merge operations at the RDF level must be prevented to ensure no changes happen to both the data and context definition.
+graph merge operations at the RDF level must be prevented to ensure that no changes occur to either the data or the context statements.
 For this, we make use of blank node identifiers for the graph name of these named graphs. 
-This ensures the scope of the context definition and its association to a target set of statements is local to the scope of the 
+This ensures the scope of the context statements and its association to a target set of statements is local to the scope of the 
 storage, exchange or operation in which they are used. 
 
 Note: if the use of blank nodes is impractical due to limitations of having to extract specific graphs from the local
 graphstore based on their name value, skolem identifiers can be used to ensure unique generation of the graph name
-at the time of its construction. Where in theory these can be used interchangeably, their hash values will differ.
+at the time of its construction. Although in theory these can be used interchangeably, their hash values will differ.
 
 <div class=example>
 
@@ -82,7 +95,7 @@ _:meta {
 
 ## Advertising the interpretation
 
-Seconly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
+Secondly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
 For this, the term `ca:LocalGraphReference` is introduced. This term defines the identifier on which it is defined as being used only
 as the reference for a named graph local to the current document or operation scope.
 
@@ -108,10 +121,9 @@ myOntology:hasGraphTarget a rdf:Property ;
 
 ## Ensuring completeness
 
-Finally, to ensure the completeness of both data and associated context when exchanging information in situations where completeness
-is not guaranteed, for example in continuous streams of RDF data, a hash value can be provided over the canonicalized 
-representation of a named graph using [RDF Dataset Canonicalization](http://w3.org/TR/rdf-canon/), that allows incoming 
-data to be verified on completeness.
+Finally, in situations (e.g., continuous streams of RDF data) where completeness is not guaranteed, a hash value may be provided 
+over the canonicalized representation of a named graph using [RDF Dataset Canonicalization](http://w3.org/TR/rdf-canon/), 
+that allows incoming data to be verified on completeness.
 
 <div class=example>
 
@@ -132,7 +144,7 @@ _:meta { ... }
 Interpreting the named graphs
 ===========================
 
-To a processing client, the interpretation of RDF data that include context associations relies on the ability to understand references to named graphs in the data. To prevent ambiguity, the above publishing approcah provides certain affordances to help the client.
+To a processing client, the interpretation of RDF data that include context associations relies on the ability to understand references to named graphs in the data. To prevent ambiguity, the above publishing approach provides certain affordances to help the client.
 
 Any client encountering a reference to a term that is defined as a `ca:LocalGraphReference`, must be interpreted as a reference to the named graph. Syntactically, this covers the set of quads of which the graph term is equal to the graph name. Semantically, this covers the interpretation of the target graph as subject to the contextual references that are associated to this graph.
 
@@ -276,7 +288,7 @@ stripping the graph term from this set of quads.
 To process a referenced graph as a set of triples, in a pass-by-value way, an unpacking of the named graph is required,
 such as using the `GRAPH` keyword in SPARQL to unpackage a named graph in triple graph, or in notation3 using graph terms.
 
-However, the core RDF specification does not provide such an unpacking mechanism. Therefor, to enforce working with the graph
+However, the core RDF specification does not provide such an unpacking mechanism. Therefore, in order to enforce working with the graph
 in a by-value approach, an approach such as SPARQL is required that allows both the use of the graph identifier and working with
 the unpackaged triples at the same time.
 

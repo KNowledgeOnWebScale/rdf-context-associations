@@ -1,2 +1,0 @@
-# RDF Graph-Based Signatures
-

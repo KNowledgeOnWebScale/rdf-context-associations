@@ -11,5 +11,5 @@ watch:
 	pipx run bikeshed watch
 	
 web:	
-	curl -s https://api.csswg.org/bikeshed/ -F file=@index.bs -F force=1 > index.html
+	curl -s https://api.csswg.org/bikeshed/ -F file=@index.bs -F force=1 > spec.html
 

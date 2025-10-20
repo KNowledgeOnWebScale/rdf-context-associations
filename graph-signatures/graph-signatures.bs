@@ -24,3 +24,85 @@ Introduction {#intro}
 In this document we introduce an approach for the signing of graphs in RDF. 
 This approach makes use of signatures suites that are based on RDF Dataset 
 Canonicalization for the transformation of the target RDF named graph.
+
+
+
+Graph Signature {#signature}
+=====================
+
+Todo: test following:
+
+RDF input -> JSON-LD representation
+Push through an RDF-based cryptosuite that does RDF Dataset Canonicalization.
+Resulting signature -> back to RDF
+
+
+
+Issue: Add spec link
+
+
+
+RDF Graph Signatures makes use of the [RDF Context Association Specification]()
+to define the target RDF named graph that is signed by the signature suite.
+
+
+<div class="example"> 
+Ontology definition
+```turtle 
+@prefix ca: <https://w3id.org/context-associations#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+
+ca:NamedGraphSignature a rdfs:Class ;
+    rdfs:comment "Signature defined over an RDF Named Graph." ;
+    rdfs:domain ca:LocalGraphReference .
+```
+</div>
+
+<div class="example">
+Signature example in turtle
+
+```turtle 
+@prefix ca: <https://w3id.org/context-associations#> .
+@prefix sec: <https://w3id.org/security#> .
+@prefix cred: <https://www.w3.org/2018/credentials#> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix vs: <http://www.w3.org/2003/06/sw-vocab-status/ns#> .
+@prefix schema: <http://schema.org/> .
+@prefix jsonld: <http://www.w3.org/ns/json-ld#> .
+
+_:signature a ca:GraphSignature ;
+    sec:proof _:proof ;
+_:proof a sec:DataIntegrityProof ;
+    sec:proofPurpose sec:assertionMethod ;
+    sec:controller <https://university.example/issuers/14> ;
+    sec:verificationMethod <https://university.example/issuers/14#key-1> ;
+    sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
+    sec:cryptoSuite "eddsa-rdfc-2022" ;
+    sec:created "2021-11-13T18:19:39Z"^^xsd:dateTime .
+```
+</div>
+
+
+
+
+Appendix A: Graph-Based signatures
+
+The nanopublications community makes use of multiple forms of hashing for content validation.
+A first approach is the use of trusty URIs, where the nanopublication identifier is a hash-based URI 
+that is calculated over the entire content of the nanopublication, including all named graphs,
+as shown in the [nanopublications for scientific publications](https://arxiv.org/abs/1809.06532) paper.
+Further, in practice examples show the use of signatures in the publication graph of the nanopublication
+that sign 
+
+Appendix B: Why no Verifiable credentials
+
+The Verifiable Credentials Data Integrity specification defines a cryptosuite as taking an input document
+and an set of options. This input document is defined as a MAP, being a key-value representation of an 
+input JSON document. This makes it incompatible with the requirement for RDF-native signatures.

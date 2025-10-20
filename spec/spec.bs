@@ -18,549 +18,319 @@ Markup Shorthands: markdown yes, css no
 <!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
 
-Introduction {#intro}
-=====================
 
-Issue: do we keep the Blank Node concept, or from a usability standpoint choose for skolemized identifiers `.well-known/genid/...` across the board?
+Introduction
+============
 
-This specification introduces an approach for managing contextualized RDF data within the confines
-of an RDF dataset called RDF Context Associations. The aim is to enable the uniform management of 
-contextualized data in RDF Web ecosystems, through enabling the exchange, storage and integration 
-of combined data and associated context as RDF in these ecosystems.
+The use of named graphs in RDF has been a widely discussed topic in the RDF community. 
+From the initial publication in 2005 [[carroll2005named]], to their introduction in the RDF standard in version 1.1,
+named graphs see varied adoption for different use-cases throughout RDF ecosystems. 
 
-Recent initiatives pushing data spaces and similar initiatives for the management and exchange 
-of information in Web ecosystems impose a need for the management of contextual information in RDF data.
-With this specification, we address an observed lack of support for uniform management of contextual
-information across RDF ecosystems, for which we focus on the generation, exchange, storage and integration
-of combined data and contextual meta-information within the RDF data model, pushing for handling context
-as a first-class citizen in the data management of Web ecosystems, to maximize potential for integration 
-and reuse of data.
+With their introduction in the RDF standard, the interpretation of named graphs was left intentionally blank
+due to the diverging interpretations that were in use at the moment of specification.
+Discussing the topic, the W3C working group provided a document [on the semantics of RDF datasets](https://www.w3.org/TR/rdf11-datasets/). 
 
-The envisioned use-cases for the proposed approach include: 
-attaching usage policies in the form of ODRL/DPV descriptions to a set of triples, 
-signing sets of triples with a verifiable signature and the creation of trust envelope
-structures to model the exchange of information required for trust flows in the ecosystem.
-    
+Due to the lack of overarching semantics, the use of named graphs finds itself constricted to specific use-cases
+and data models, limiting their overall usability for exchange and reuse across ecosystems. 
+
+With this minimal specification, we aim to provide a pragmatic approach for the management of 
+expressions of context over graphs of RDF statements. For this, we use named graphs as an indication
+of a shared context or meaning of a set of statements, that can be referenced using the graph name
+of the named graph in which this set of statements is embedded. 
+
+The definition of a context association is that 
+**a context association is an association of a target set of triples encoded as a named graph in RDF, where the blank node graph name identifier is referenced by a context definition in the local RDF scope. The graph name identifier MUST be interpreted with respect to its role as the name of a local named graph, and the target graph MUST syntactically be interpreted as the set of quads whose graph term is equal to that graph name. The association between the context definition and the target set of statements is local to the RDF scope, and the target set of statements MUST NOT be considered universally true or replicated in the default graph, but understood only within the scope of its named graph and the context associated with it.**
+
+Publishing RDF context associations
+===========================
+
+When publishing combined context and data, we must make sure the approach both is unambiguous in what context
+information is tied to what target graph of statements, as well as being exact in both its defined contextual
+information and the extent of the target set of statements. Additionally, we must hint to a consuming client 
+that a specific interpretation of the context definition with regards to the targeted graph of statements is required.
+
+### Closing the open world
+
+To solve the problem of exactly defining the sets of context statements and its targeted data,
+we need to restrict the open world interpretation of RDF to concrete and closed sets of statements
+that define exact sets of data statements and associated context statements, for which we use named graphs in RDF.
+
+To ensure these sets of statements remain closed in definition, exchange and processing of the data and context,
+graph merge operations at the RDF level must be prevented to ensure no changes happen to both the data and context definition.
+For this, we make use of blank node identifiers for the graph name of these named graphs. 
+This ensures the scope of the context definition and its association to a target set of statements is local to the scope of the 
+storage, exchange or operation in which they are used. 
+
+Note: if the use of blank nodes is impractical due to limitations of having to extract specific graphs from the local
+graphstore based on their name value, skolem identifiers can be used to ensure unique generation of the graph name
+at the time of its construction. Where in theory these can be used interchangeably, their hash values will differ.
+
+<div class=example>
+
+The data an metadata are published as blank node graphs
+```turtle
+_:data {
+    <http://people.org/Bob#me> foaf:name "Bob" .
+        foaf:age "27" .
+}
+
+_:meta {
+    _:data ex:creator <http://people.org/Bob#me> .
+}
+```
+</div>
+
+### Advertising the interpretation
+
+Seconly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
+For this, the term `ca:LocalGraphReference` is introduced. This term defines the identifier on which it is defined as being used only
+as the reference for a named graph local to the current document or operation scope.
+
+<div class=example>
+
+This identifier can be directly embedded in the RDF data
+```turtle
+_:data a ca:LocalGraphReference .
+_:data { ... } .
+
+_:meta a ca:LocalGraphReference .
+_:meta { ... } .
+```
+
+Or it can be defined as the range or domain of a predicate in its OWL definition.
+```
+myOntology:hasGraphTarget a rdf:Property ;
+    rdfs:range ca:LocalGraphReference ;
+    rdfs:comment "This property points to a target named graph." .
+```
+
+</div>
+
+### Ensuring completeness
+
+Finally, to ensure the completeness of both data and associated context when exchanging information in situations where completeness
+is not guaranteed, for example in continuous streams of RDF data, a hash value can be provided over the canonicalized 
+representation of a named graph using [RDF Dataset Canonicalization](http://w3.org/TR/rdf-canon/), that allows incoming 
+data to be verified on completeness.
+
+<div class=example>
+
+The data an metadata are published as blank node graphs
+```turtle
+_:data a ca:LocalGraphReference .
+_:data ca:hash "..." .
+_:data { ... } 
+
+_:meta a ca:LocalGraphReference .
+_:meta ca:hash "..." .
+_:meta { ... } 
+```
+</div>
+
+
+
+Interpreting the named graphs
+===========================
+
+To a processing client, the interpretation of RDF data that include context associations relies on the ability to understand references to named graphs in the data. To prevent ambiguity, the above publishing approcah provides certain affordances to help the client.
+
+Any client encountering a reference to a term that is defined as a `ca:LocalGraphReference`, must be interpreted as a reference to the named graph. Syntactically, this covers the set of quads of which the graph term is equal to the graph name. Semantically, this covers the interpretation of the target graph as subject to the contextual references that are associated to this graph.
+
+The use of blank node identifiers minimizes the danger of misunderstanding the graph reference, as the graph name identifier cannot be misconstrued as a reference that leaves the local RDF scope, and should not be used for any use other than as a reference for its named graph.
+
+The availability of content hashes helps ensure consistency even in cases such as streaming RDF where the scope of blank nodes is not well-defined.
+
+
+Examples
+===================
+To demonstrate this, we take a small example of a set of data that is annotated with metadata within the local RDF dataset.
 
 <div class="example">
-An example association of a set of contextual information accompanying an RDF graph. 
-We want to assign an origin of a set of statements to the user personal data space:
+Ruben has a set of data statements about himself issued by a government instance.
+
+```turtle
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+
+<http://people.org/ruben> foaf:name "Ruben";
+    foaf:age 28.
+```
+
+However, as Ruben wants to prove his age to an external actor, 
+he requests a signed representation by the issuing instance that defines its `targetGraph` predicate to have an `rdfs:range` of `ca:LocalGraphReference`.
+
+Providing the following OWL definition
+```turtle
+@prefix ca: <https://w3id.org/context-associations#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sign: <http://example.org/ns/sign#>. 
+@prefix prov: <http://example.org/ns/prov#>. 
+
+sign:targetGraph a rdfs:Property;
+    rdfs:range ca:LocalGraphReference;
+    rdfs:comment "The graph target of the signature." .
+
+prov:contentGraph a rdfs:Property;
+    rdfs:range ca:LocalGraphReference;
+    rdfs:comment "The graph defining the contents retrieved from a source." .
+```
+
+and resulting data 
 ```turtle
 @prefix dcterms: <http://purl.org/dc/terms/>.
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sign: <http://example.org/ns/sign#>. 
+@prefix prov: <http://example.org/ns/prov#>. 
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>. 
+@prefix ca: <https://w3id.org/context-associations#>.  
 
-_:dataGraph {
-    <http://people.org/ruben> foaf:name "Ruben";
-        foaf:age 28.
+_:data {
+    <http://people.org/ruben> foaf:name "Ruben" ;
+        foaf:age 28 .
 }
-_:provenanceGraph {
-    dcterms:source <http://dataspaces.org/ruben>;
-    dcterms:creator <http://people.org/ruben>;
-    dcterms:created "2021-01-01"^^xsd:date.
-}
+
+_:retrieval prov:contentGraph _:data ;
+    prov:source <http://gov.org/registry/14/> ;
+    prov:actor <http://people.org/ruben> .
+
+_:s a sign:Signature ;
+    sign:targetGraph _:data ;
+    sign:issuer <http://gov.org/issuers/14> ;
+    sign:proofValue "..." .
+
+# entailed
+_:data a ca:LocalGraphReference.
 ```
-</div>
 
-Defining local boundaries with Named Graphs {#named-graphs}
-===========================================================
+For which now recursively, the user can sign its own metadata graph, 
+providing validation of both the source data and the metadata by 
+verifying signatures of different issuers.
 
-Based on prior work presented at [ESWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ESWC/demo/paper.pdf),
-as well as unpublished work submitted to [ISWC 2025](https://pod.rubendedecker.be/scholar/publications/2025/ISWC/paper.pdf),
-we focus on named graphs as the prefered approach for defining local boundaries in RDF datasets, 
-under which we understand Web resources, graph databases, RDF resources and all other RDF storage 
-approaches that result in a local sets of RDF quads.
-
-Issue: fix ISWC Link with arxiv link
-
-
-
-The Context Association data model {#ca-data-model}
-==================================================
-
-The Context Association (CA) model provides a data modeling approach that
-defines data as local interlinking named graphs in an RDF Dataset.
-To ensure uniform evaluation of the data, SPARQL is used to evaluated
-combined requirements for data and metadata from these interlinking named graphs.
-
-The CA approach is based on the following principles:
-- Every set of RDF triple statements is defined within *some* context.
-- Integration of statements is fully dependent on the context in which they are defined.
-- Any implicit context assigned to a resource or named graph, can be made explicit in the RDF data model.
-
-Based on these principles, the CA modeling approach enforces the following requirements: 
-- Statements MUST be defined only as part of a named graph, never in the default graph.
-- Named graphs MUST be defined with either a blank node identifier, or with a skolemized identifier using the `.well-known/genid/` prefix to enable external references and late context binding.
-
-
-Conversion Algorithm {#conversion}
-==================================
-
-The target of the Context Association specification is to be able to 
-annotate any RDF data with associated context information that is portable
-with the data to maximize its potential for integration and reuse.
-
-To this end, we defined an annotation algorithm that can be applied to any RDF data
-to convert it into a CA-compliant data model over which context associations can be defined.
-
-The conversion of an RDF dataset without named graphs into the Context Association data model,
-requires only the nesting of the statements contained in its default graph into a named graph
-defined with a blank node or skolem graph name identifier.
-
-The conversion of an RDF dataset that contains named graphs, requires the following approach: 
-
-1. For all named graphs in the source data that have a graph name identifier `I` that is neither a blank node nor skolem identifier, relabel the graph name to a new blank node or skolem identifier `I'`.
-2. For each statement in the data source that makes use the identifier `I` of one of these graphs, **decide** if this the identifier is used as a reference to the named graph, or as a reference to the resource defined by identifier `I`. In case the reference is to the named graph, relabel the identifier in the statement to `I'`.
-3. For all statements in the default graph, nest these statements in a new named graph defined with a blank node or skolem identifier `G`.
-
-While this conversion is straightforward, the interpretation of the graph name identifier is not specified in the RDF specification,
-leading to a decision needing to be made in step 2 that is inherent to the data model in which the source data is defined.
-
-<div class="example">
-The following example illustrates a case where the graph name identifier is both used as 
-a reference to a resource, and a reference to the local named graph, where it serves as
-an implicit context for the contained statements. This example clearly indicates the 
-difficulty of automating this decision if the source data model is not known.
 
 ```turtle
-@prefix ex: <http://example.org/ns#>.
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sign: <http://example.org/ns/sign#>. 
+@prefix prov: <http://example.org/ns/prov#>. 
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>. 
+@prefix ca: <https://w3id.org/context-associations#>.  
 
-<http://dataspace.org/Bob/resource1> a rdf:Resource.
+_:data { ... }
 
-_:retrieval a ex:Retrieval;
-    ex:hasContents <http://dataspace.org/Bob/resource1>.
-
-<http://dataspace.org/Bob/resource1> {
-    ex:statement1 ex:property "value1" .
-    ex:statement2 ex:property "value2" .
-}
-``` 
-Processing the above graph, we have two references to the graph name 
-`<http://dataspace.org/Bob/resource1>`. The first statement indicating
-this identifier to be a resource, refers to the original URI. 
-This identifiers SHOULD NOT be relabeled, as this type definition is
-defined on the specific identifier. 
-In the retrieval entity, the reference to `<http://dataspace.org/Bob/resource1>`
-is used as a reference to the graph contents. In this case, the identifier SHOULD
-be relabeled to remain consistent in the semantics of the resulting graph. 
-```turtle
-@prefix ex: <http://example.org/ns#>.
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix dcterms: <http://purl.org/dc/terms/>.
-@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/>.
-@prefix sd: <http://www.w3.org/ns/sparql-service-description#>.
-
-<http://dataspace.org/Bob/resource1> a rdf:Resource.
-
-_:retrieval a ex:Retrieval;
-    ex:hasContents _:graph.
-
-_:graph {
-    ex:statement1 ex:property "value1" .
-    ex:statement2 ex:property "value2" .
+_:meta {
+    _:retrieval prov:contentGraph _:data ;
+        prov:source <http://gov.org/registry/14/> ;
+        prov:actor <http://people.org/ruben> .
 }
 
-# Explicit contextualization
-_:graph a rdfg:Graph, sd:NamedGraph;
-    prov:wasDerivedFrom <http://dataspace.org/Bob/resource1>.
-``` 
+_:meta_s a sign:Signature ;
+    sign:targetGraph _:meta ;
+    sign:issuer <http://people.org/ruben> ;
+    sign:proofValue "..." .
+ 
+
+_:s a sign:Signature ;
+    sign:targetGraph _:data ;
+    sign:issuer <http://gov.org/issuers/14> ;
+    sign:proofValue "..." .
+
+# entailed
+_:data a ca:LocalGraphReference.
+_:meta a ca:LocalGraphReference.
+```
+
+
 </div>
 
-Publisher Behavior {#publisher}
-===============================
-
-This section defines how a data publisher can advertise the use of a CA-compliant data model.
-As the data format is compatible with any RDF 1.1 compliant format (n-quads, trig, json-ld),
-this capability is advertised using [profile negotiation](https://www.w3.org/TR/dx-prof-conneg/).
-For this, the profile [https://w3id.org/context-associations/profile](https://w3id.org/context-associations/profile) is used.
-
-## SPARQL endpoint ## {#publisher-sparql}
-A CA publisher providing a SPARQL endpoint over its internal knowledge graph,
-can freely allow the internal data model to be queried through SPARQL.
-
-<!-- protection of internals in case of skolem IRIs -->
-The publisher MAY choose to relabel skolem identifiers in the internal knowledge graph
-to blank nodes to protect its internal data model and disallow external actors from referencing internal context.
-
-<!-- support for non-ca clients -->
-Additionally, the publisher MAY choose to wrap SPARQL queries that do not make use of the `GRAPH` keyword
-in a `GRAPH ?g`, as shown in [the example below](#example_query). During this process, they are free to
-federate this relabeling over all contained graphs, or to match the query at the level of individual contained graphs.
-
-Issue: Check the SPARQL service definitions ontology. Can we advertise this use of named graphs from here?
-
-<div class="example" id="example_query">
-An example of a query relabeling to map a naive query to the CA data model.
-```sparql
-CONSTRUCT { BGP }
-WHERE { BGP }
-```
-may be relabeled to
-```sparql
-CONSTRUCT { BGP }
-WHERE { 
-    GRAPH ?g { BGP} 
-}
-```
-or federated over the contained graphs
-```sparql
-CONSTRUCT { BGP }
-WHERE { 
-
-    GRAPH ?g1 { bgp_triple_1 } 
-    GRAPH ?g2 { bgp_triple_2 } 
-    GRAPH ?g3 { bgp_triple_3 } 
-}
-```
-</div>
-
-## Resource Publishing ## {#publisher-resource}
-Resources published MUST adhere to the Context Associations data model.
-
-<!-- support for non-ca clients -->
-A publisher MAY choose to duplicate statements in the default graph 
-to support clients that cannot process named graphs present in the content.
 
 
 
-Client Behavior {#client}
-=========================
+Appendix A: Considerations
+==================
 
-##  ## {#t1}
-weq
+This section discusses some considerations as to why certain decisions were made.
 
-## Processing incoming RDF data ## {#t2}
-qew
+## Why named graphs instead of reification / rdf-star / triple terms 
 
-## Processing incoming RDF data ## {#t3}
-qwqe
+The choice for named graphs is both a pragmatic choice of choosing an existing RDF standard
+that should be supported in all RDF 1.1 compatible tooling, that provides inherent support of 
+annotating sets of triples instead of individual triples. 
+Where reification and triple terms can be modeled as part of a collection or other entity that 
+defines a selection of triples, these do not provide an inherent boundary within the RDF dataset, 
+but is fully reliant on the documentation of the approach to indicate the intended boundary of that
+collection entity. Named graphs does not suffer from this problem, and provides an inherent boundary 
+of its contained triples from the default graph and the other named graphs of an RDF dataset
 
+Additionally, both [Evaluation of Metadata Representations in RDF stores](https://www.semantic-web-journal.net/content/evaluation-metadata-representations-rdf-stores)
+as well as an unpublished paper from our side found that named graphs provide competitive performance 
+with other annotation methods.
 
+## Syntactic scope of the named graph
 
+There are two possible interpretations in which a referenced named graph can be interpreted in RDF,
+as the set of quads where the term equals the given graph name, or the set of triples found by 
+stripping the graph term from this set of quads. 
 
+To process a referenced graph as a set of triples, in a pass-by-value way, an unpacking of the named graph is required,
+such as using the `GRAPH` keyword in SPARQL to unpackage a named graph in triple graph, or in notation3 using graph terms.
 
-Graph-based signatures {#signatures}
-====================================
+However, the core RDF specification does not provide such an unpacking mechanism. Therefor, to enforce working with the graph
+in a by-value approach, an approach such as SPARQL is required that allows both the use of the graph identifier and working with
+the unpackaged triples at the same time.
 
-
-The goal of adding signatures to RDF is not to sign individual claims, 
-but to enable signatures as a core part of the RDF data model, 
-as previously has been attempted multiple times with RSA signatures.
-As we want signatures that are a core part of RDF data strategies, 
-the use of W3C Credentials and their reliance on a JSON-structure to 
-close their signature target contents is incompatible with this goal,
-as their combined processing with SPARQL cause ambiguity issues, 
-which is unacceptable for an RDF-native solution.
-
-The only rdf-native closure for multiple triples that provides a valid
-candidate for signWatures is the use of named graphs.
-To define a signature over a named graph in RDF, 
-we need to be able to evaluate the resulting signature uniformly across different systems.
-To evaluate the contents of the signature, we need to enforce the graph-based interpretation
-of the content reference to the named graph, as defined in the previous section.
-As there is no other containment definition making use of blank nodes to define sections of RDF data, 
-we infer that the use of blank nodes as graph names allows for unambiguous understanding of the target
-reference of a signature defined in an RDF dataset, even without concrete indication that the target
-URI references a named graph.
-
-However, we have to take into account that sometimes, we need to process the content first, 
-e.g. by using RDF canonicalization, before a hash can be made to create or validate a signature over.
-
-Todo: the above paragraph is essential, but a bit covered in the contents here. Rewrite!
-
-As this is an RDF-native conversion, this ONLY APPLIES to signature suites making use RDF-canonicalization,
-an not for signature suites that rely on JSON canonicalization. Additionally, selective disclosure is currently not supported.
-
-Currently supported crypto suites include: [ [https://www.w3.org/TR/vc-di-ecdsa/#ecdsa-rdfc-2019](ecdsa-rdfc-2019) ].
-Where the specification for these crypto suites starts from the concept of an `unsecured document` in RDF, 
-that is canonicalized into an set of quads formatted as `application/n-quads`, over which a has is taken,
-there are two options here. 
-Firstly, we could skip the unsecured document step, and directly use the RDF graph as the input for the canonicalization.
-However, this might not be interoperable with existing crypto suite implementations. 
-A second option is to feed the resulting blank node graph of the target evaluation using the above SPARQL construct query [todo: add reference],
-and convert its format to a JSON-LD representation, that is then used as the unsecure document input for the crypto suite.
-
-As we do not make use of a credential object, the signature metadata itself is not an inherent part of its signed content. 
-There are two valid approaches to tackling this problem.
-Either, the signature metadata can be defined in the target graph of the signature, after which the signature is constructed over the target graph signing its own metadata. 
-Alternatively, a second signature can be constructed over a metadata graph that contains the signature metadata.
-
-Todo: add flow diagram, and link example implementation in nodejs
-
-<div class="example">
-```turtle
-_:g0 {
-    :Bob foaf:name "Bob".
-}
-
-# sign data graph
-_:g1 {
-    _:g0 sec:proof _:signature1;
-    _:signature1 
-        a sec:DataIntegrityProof;
-        sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:verificationMethod <https://university.example/issuers/14#key-1>;
-        sec:proofPurpose sec:assertionMethod;
-        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz".
-        sec:issuer <https://university.example/issuers/14>;
-        sec:validFrom: "2024-04-03T00:00:00.000Z"^^xsd:dateTime,
-        sec:validUntil: "2025-04-03T00:00:00.000Z"^^xsd:dateTime,
-}
-
-# sign signature graph for verifiable metadata if needed
-_:g3 {
-    _:g1 sec:proof _:signature2;
-    _:signature2 
-        a sec:DataIntegrityProof;
-        sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:verificationMethod <https://university.example/issuers/14#key-1>;
-        sec:proofPurpose sec:assertionMethod;
-        sec:proofValue "adad123efv434r5200...dqed2t44v43das".
-}
-```
-</div>
-
-The issue of signing the issuer and other metadata associated with the signature
-causes some practical considerations when creating signatures at the level of individual 
-named graphs in the RDF data model.
-
-For the definition of the signature issuer, we can fall back on the requirement to associated
-the issuer with the verificationMethod stated in the signature, in this case a public key, 
-that must be linked by the issuer on dereferencing their profile information.
-Other metadata however can be added to the signature, but requires a recursive signature definition
-over the graph containing the original signature and all it's metadata. 
-
-<div class="example">
-```sparql
-CONSTRUCT { ?s ?p ?o } 
-WHERE {
-    ?dataGraph { ?s ?p ?o. }
-    ?signatureGraph {
-        ?dataGraph sec:proof ?signature.
-        ?signature a sec:DataIntegrityProof;
-            sec:issuer <?issuer>;
-            sec:validUntil ?validUntil;
-            local:validated true.
+<div class=example>
+```SPARQL
+CONSTRUCT {
+    ?s ?p ?o.
+    ?g :issuer ?issuer.
+} WHERE {
+    GRAPH ?g {
+        ?s ?p ?o.
     }
-    FILTER(STRSTARTS(STR(?issuer), "https://university.example/issuers/"))
-    FILTER ( ?validUntil > xsd:date(NOW()) )
+    ?g :issuer ?issuer.
 }
 ```
 </div>
 
-Signature evaluation can happen through SPARQL. However, the validation of the signature needs 
-to happen in a pre-processing step. This can be integrated by removing signatures that are not 
-valid because they are outdated, cannot be verified, ..., or they can be explicitly marked as 
-validated in the internal system. As the signature does not inherently sign its own metadata, 
-in cases where a verified signature does not imply valid signature metadata, this can be enforced
-by requiring the signature graph itself to be signed and reflecting this in the data query.
+So unless a processing approach such as SPARQL can be enforced, the syntactic interpretation of named graphs must be constrained
+to its set of quads to retain consistency and functionality throughout the processing pipeline.
 
-Creating graph-based policies {#policies}
-========================================
+## Semantic and syntactic interpretation of RDF named graphs
 
-The local definition of policies, especially the ones pertaining to usage restrictions defined
-over selections of data, is important to be uniformly understood throughout the ecosystem in 
-which they are defined and exchanged. 
-Here again, the interpretation of the policy target is the 
+The semantics of named graphs have had extensive discussion previously in the semantic web community,
+much of which has been collected in a document published by the RDF working group 
+[On Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/).
 
-The evaluation of policies over graphs also makes use of the SPARQL approach of finding the quads contained by the target graph.
-Note that for policy models such as ODRL, that atomize their policies over all targets, multiple target graphs can be indicated without changing the semantics of the policy.
-In cases where this would not be the case, such as policy models supporting negation over multiple targets, only signle target graphs can be used, as the semantics of the policy would not be clear otherwise.
+The evaluation of entailment regimes over RDF graphs is closely tied to the unpacking of said graphs
+in the RDF dataset. Therefore, it is left out of scope for this specification.
+
+## Working with remote references
+
+For practical purposes, we restrict the interpretation of graph references to local graphs. 
+This goes for blank nodes, dereferenceable URIs and non-dereferenceable URIs.
+
+The integration of remote graphs through the dereferencing requires a more holistic approach 
+that can resolve inconsistencies in the resulting dataset following a merge operation. 
+A similar approach can be seen with the use of `owl:imports` in Notation3 reasoning.
 
 
-<div class="example">
-```turtle
-_:g0 {
-    :Bob foaf:name "Bob".
+<pre class=biblio>
+{
+  "carroll2005named": {
+    "href": "https://www.sciencedirect.com/science/article/pii/S1570826805000235",
+    "title": "Named graphs",
+    "authors": [
+        "Jeremy J. Carroll",
+        "Christian Bizer",
+        "Pat Hayes",
+        "Patrick Stickler"
+    ],
+    "publisher": "Journal of Web Semantics",
+    "date": "December 2005"
+  }
 }
-
-_:g1 {
-    _:g0 dc:origin <http://dataspace.org/Bob>;
-}
-
-# policy over data graph
-_:g2 {
-    _:g0 odrl:hasPolicy _:policy.
-    _:g1 odrl:hasPolicy _:policy.
-    _:policy 
-        pol:permission [
-            pol:target _:g0, _:g1 ;
-            pol:action pol:Read;
-            pol:assigner <http://people.org/Bob>;
-            pol:assignee med:MedicalService.
-        ].
-}
-```
-</div>
-
-
-Designing graph-based provenance records {#provenance}
-======================================================
-
-Defining provenance over graphs natively can be done by reference to its graph name as defined above. 
-However, likely provenance information will take the form of provenance objects indicating a certain
-action of entity interacting with a data graph. In this case, the provenance model can reference the
-data graph directly, while being wrapped in a named graph to allow for referencing. Signature and policy
-definitions now need to be defined both over the data graph and the metadata graph separately.
-Note that policies, provenance, signature metadata and other forms of additional information can be bundled
-in named graphs at will. The only constraint is that references to this named graph inherently target the whole 
-RDF graph and not individual statements inside the graph.
-
-
-<div class="example">
-```turtle
-_:g0 {
-    :Bob foaf:name "Bob".
-}
-
-_:g1 {
-    :DataRetrieval
-        a prov:Entity;
-        prov:wasDerivedFrom  <http://dataspace.org/Bob>;
-        prov:wasAttributedTo :Bob;
-        prov:contents _:g0.
-```
-</div>
-
-
-
-Designing a Trust Envelope {#trust-envelope}
-============================================
-A Trust Envelope is a standardized way of exchanging a set of RDF statements 
-that are associated with a specific context, that is meant for exchange, storage 
-and processing throughout Web ecosystems.
-It provides a way to encapsulate the trust relationships and 
-policies that govern the use of the data within that context.
-
-Given a data graph 
-```turtle
-_:g0 {
-    :Bob foaf:name "Bob".
-        foaf:age 25.
-}
-```
-we define a trust envelope allowing the sharing of this data with a medical practitioner for the duration of 1 year, 
-with the inclusion of a set of metadata to indicate the provenance of the data, the signature of the data and the policy that governs its use.
-
-
-<div class="example">
-
-```turtle
-_:envelopeGraph {
-    _:envelope a trust:TrustEnvelope;
-        trust:sender <http://people.org/Bob>;
-        trust:recipient <http://medical.org/Practitioner>;
-        trust:includes  _:g1 _:g2 _:g3 _:g4 _:g5;
-}
-
-# data graph from Bob's data space
-_:g1 {
-    :Bob foaf:name "Bob".
-        foaf:age 25.
-}
-
-# signature of data graph, by belgian government also retrieved from Bob's data space
-_:g2 {
-    _:g0 sec:proof [
-    a sec:DataIntegrityProof;
-            sec:cryptosuite "ecdsa-rdfc-2019";
-            sec:created "2020-01-01T00:00:00.000Z"^^xsd:dateTime;
-            sec:verificationMethod <https://university.example/issuers/14#key-1>;
-            sec:proofPurpose sec:assertionMethod;
-            sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
-            sec:issuer <https://government.belgium/issuers/14>;
-            sec:validFrom "2020-01-01T00:00:00.000Z"^^xsd:dateTime;
-            sec:validUntil "2030-01-01T00:00:00.000Z"^^xsd:dateTime.
-        ] 
-}
-
-# metadata definition of retrieved data graph and associated siganture, by Bob's data space
-_:g3 {
-    _:g0 dcterms:source <http://dataspace.org/Bob>;
-    _:g1 dcterms:source <http://dataspace.org/Bob>;
-}
-
-_:g4 {
-    _:g1 odrl:hasPolicy _:policy.
-    _:g2 odrl:hasPolicy _:policy.
-    _:g3 odrl:hasPolicy _:policy.
-    _:policy 
-        odrl:permission [
-            odrl:target _:g1 _:g2 _:g3;
-            odrl:action odrl:Use;
-            odrl:assigner <http://people.org/Bob>;
-            odrl:assignee <http://medical.org/Practitioner>.
-        ].
-}
-
-_:g5 {
-    # signature of metadata graph by data space
-    _:g3 sec:proof _:s1;
-    _:s1 
-        a sec:DataIntegrityProof;
-        sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:verificationMethod <http://dataspaces.org/keys/publicKey>;
-        sec:proofPurpose sec:assertionMethod;
-        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
-        sec:issuer <http://dataspaces.org/Bob>;
-        sec:validFrom "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:validUntil "2025-04-03T00:00:00.000Z"^^xsd:dateTime.
-    
-    # signature for policy graph by Bob's personal signature
-    _:g4 sec:proof _:s2;
-    _:s2 
-        a sec:DataIntegrityProof;
-        sec:cryptosuite "ecdsa-rdfc-2019";
-        sec:created "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:verificationMethod <https://people.org/Bob#key-1>";
-        sec:proofPurpose sec:assertionMethod;
-        sec:proofValue "z58DAdFfa9SkqZMVPxAQp...jQCrfFPP2oumHKtz";
-        sec:issuer <https://poeple.org/Bob>;
-        sec:validFrom "2024-04-03T00:00:00.000Z"^^xsd:dateTime;
-        sec:validUntil "2025-04-03T00:00:00.000Z"^^xsd:dateTime.
-}
-
-```
-
-The practicioner can then now evaluate based on this trust envelope if a user is of age: 
-
-```sparql
-CONSTRUCT { ?userId ex:isOfAge ?ofAge }
-WHERE {
-    # Query data requirements
-    ?dataGraph { ?userId foaf:age ?age }
-    # Query policy requirements
-    ?policyGraph { 
-        ?dataGraph odrl:hasPolicy ?policy.
-        ?policy odrl:permission ?permission.
-        ?permission odrl:action odrl:use.
-    }
-    # Ensure data is signed by government
-    ?dataSignatureGraph {
-        ?dataGraph sec:proof ?dataSignature.
-        ?dataSignature a sec:DataIntegrityProof;
-            sec:issuer ?govIssuer;
-            sec:validUntil ?validUntil1.
-    }
-
-    # Ensure policy is signed by user
-    ?dataSignatureGraph {
-        ?policyGraph sec:proof ?policySignature.
-        ?policySignature a sec:DataIntegrityProof;
-            sec:issuer ?userId;
-            sec:validUntil ?validUntil1.
-    }
-
-    BIND(?age > 18 AS ?ofAge)
-    FILTER(STRSTARTS(STR(?govIssuer), "https://government.belgium/issuers/"))
-    FILTER ( ?validUntil > xsd:date(NOW()) )
-} 
-```
-</div>
+</pre>
 
 

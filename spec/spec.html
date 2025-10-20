@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 3f621ba99, updated Mon Jul 28 15:38:36 2025 -0700" name="generator">
   <link href="https://knowledgeonwebscale.github.io/rdf-context-associations-spec/" rel="canonical">
-  <meta content="4683adbf98b76505a911af262c04fac534c157dd" name="revision">
+  <meta content="3d1ee9d4960e306389dc1d7b79ff09b9d2c12399" name="revision">
   <meta content="dark light" name="color-scheme">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
@@ -2016,7 +2016,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">RDF Context Associations Speficiation</h1>
    <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document,
-    <time class="dt-updated" datetime="2025-09-09">9 September 2025</time></span></h2>
+    <time class="dt-updated" datetime="2025-10-20">20 October 2025</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2032,7 +2032,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a>
 To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 9 September 2025,
+In addition, as of 20 October 2025,
 the editors have made this specification available under the
 <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
@@ -2048,11 +2048,16 @@ Parts of this work may be from another specification document.  If so, those par
   <nav data-fill-with="table-of-contents" id="toc">
    <h2 class="no-num no-toc no-ref" id="contents">Table of Contents</h2>
    <ol class="toc" role="directory">
-    <li><a href="#intro"><span class="secno">1</span> <span class="content">Introduction</span></a>
-    <li><a href="#referencing"><span class="secno">2</span> <span class="content">Defining named graph references</span></a>
-    <li><a href="#interpretation"><span class="secno">3</span> <span class="content">Interpreting the graph reference</span></a>
-    <li><a href="#processing"><span class="secno">4</span> <span class="content">Processing a <code>ca:LocalGraphReference</code></span></a>
-    <li><a href="#example"><span class="secno">5</span> <span class="content">Examples</span></a>
+    <li><a href="#introduction"><span class="secno">1</span> <span class="content">Introduction</span></a>
+    <li>
+     <a href="#publishing-rdf-context-associations"><span class="secno">2</span> <span class="content">Publishing RDF context associations</span></a>
+     <ol class="toc">
+      <li><a href="#closing-the-open-world"><span class="secno">2.1</span> <span class="content">Closing the open world</span></a>
+      <li><a href="#advertising-the-interpretation"><span class="secno">2.2</span> <span class="content">Advertising the interpretation</span></a>
+      <li><a href="#ensuring-completeness"><span class="secno">2.3</span> <span class="content">Ensuring completeness</span></a>
+     </ol>
+    <li><a href="#interpreting-the-named-graphs"><span class="secno">3</span> <span class="content">Interpreting the named graphs</span></a>
+    <li><a href="#examples"><span class="secno">4</span> <span class="content">Examples</span></a>
     <li>
      <a href="#appendix-a-considerations"><span class="secno"></span> <span class="content">Appendix A: Considerations</span></a>
      <ol class="toc">
@@ -2072,89 +2077,105 @@ Parts of this work may be from another specification document.  If so, those par
    </ol>
   </nav>
   <main>
-   <h2 class="heading settled" data-level="1" id="intro"><span class="secno">1. </span><span class="content">Introduction</span><a class="self-link" href="#intro"></a></h2>
-   <p>The annotation of data within RDF documents has seen wide adoption over the years.
-The RDF specifications themselves have progressively incorporated mechanisms to support such annotation, 
-most notably through skolemization, the introduction of named graphs, and—most recently—the addition of triple terms in RDF 1.2.</p>
-   <p>Despite this progress, the semantics of named graphs remain only partially defined.
-In particular, the RDF specifications deliberately leave open how the IRI used as a graph name relates to the RDF graph it denotes. 
-This gap limits the ability of applications to unambiguously interpret graph names when referencing the associated RDF graph.</p>
-   <p>This specification addresses that need. It introduces a minimal vocabulary for referencing named graphs that are local to a given RDF dataset.
-The goal is to support metadata annotation use cases in line with those first articulated in the Named Graphs paper <a data-link-type="biblio" href="#biblio-carroll2005named" title="Named graphs">[carroll2005named]</a>, 
-while remaining compatible with the RDF 1.1 and RDF 1.2 dataset model.</p>
-   <h2 class="heading settled" data-level="2" id="referencing"><span class="secno">2. </span><span class="content">Defining named graph references</span><a class="self-link" href="#referencing"></a></h2>
-   <p>The identifier used as the graph name of a named graph can serve two distinct roles:
-it may denote an RDF resource in its own right, or it may function as a reference to the RDF graph that bears this identifier as its name.
-This dual role creates semantic ambiguity whenever such identifiers appear as object terms in RDF triples.</p>
-   <p>To resolve this ambiguity, this specification introduces the class <code>ca:LocalGraphReference</code>.
-A term declared as an instance of this class MUST be interpreted as a reference to the named graph 
-identified by that term within the scope of the current RDF dataset.</p>
-   <p>Dereferencing the identifier, whether locally or remotely, MUST yield the complete set of quads associated with the named graph in the current RDF dataset scope.
-This includes all quads whose graph term matches the referenced identifier.</p>
-   <p>The property is defined as follows:</p>
-   <div class="example" id="example-9d0b9c3b">
-    <a class="self-link" href="#example-9d0b9c3b"></a> 
+   <h2 class="heading settled" data-level="1" id="introduction"><span class="secno">1. </span><span class="content">Introduction</span><a class="self-link" href="#introduction"></a></h2>
+   <p>The use of named graphs in RDF has been a widely discussed topic in the RDF community.
+From the initial publication in 2005 <a data-link-type="biblio" href="#biblio-carroll2005named" title="Named graphs">[carroll2005named]</a>, to their introduction in the RDF standard in version 1.1,
+named graphs see varied adoption for different use-cases throughout RDF ecosystems.</p>
+   <p>With their introduction in the RDF standard, the interpretation of named graphs was left intentionally blank
+due to the diverging interpretations that were in use at the moment of specification.
+Discussing the topic, the W3C working group provided a document <a href="https://www.w3.org/TR/rdf11-datasets/">on the semantics of RDF datasets</a>.</p>
+   <p>Due to the lack of overarching semantics, the use of named graphs finds itself constricted to specific use-cases
+and data models, limiting their overall usability for exchange and reuse across ecosystems.</p>
+   <p>With this minimal specification, we aim to provide a pragmatic approach for the management of
+expressions of context over graphs of RDF statements. For this, we use named graphs as an indication
+of a shared context or meaning of a set of statements, that can be referenced using the graph name
+of the named graph in which this set of statements is embedded.</p>
+   <p>The definition of a context association is that
+<strong>a context association is an association of a target set of triples encoded as a named graph in RDF, where the blank node graph name identifier is referenced by a context definition in the local RDF scope. The graph name identifier MUST be interpreted with respect to its role as the name of a local named graph, and the target graph MUST syntactically be interpreted as the set of quads whose graph term is equal to that graph name. The association between the context definition and the target set of statements is local to the RDF scope, and the target set of statements MUST NOT be considered universally true or replicated in the default graph, but understood only within the scope of its named graph and the context associated with it.</strong></p>
+   <h2 class="heading settled" data-level="2" id="publishing-rdf-context-associations"><span class="secno">2. </span><span class="content">Publishing RDF context associations</span><a class="self-link" href="#publishing-rdf-context-associations"></a></h2>
+   <p>When publishing combined context and data, we must make sure the approach both is unambiguous in what context
+information is tied to what target graph of statements, as well as being exact in both its defined contextual
+information and the extent of the target set of statements. Additionally, we must hint to a consuming client 
+that a specific interpretation of the context definition with regards to the targeted graph of statements is required.</p>
+   <h3 class="heading settled" data-level="2.1" id="closing-the-open-world"><span class="secno">2.1. </span><span class="content">Closing the open world</span><a class="self-link" href="#closing-the-open-world"></a></h3>
+   <p>To solve the problem of exactly defining the sets of context statements and its targeted data,
+we need to restrict the open world interpretation of RDF to concrete and closed sets of statements
+that define exact sets of data statements and associated context statements, for which we use named graphs in RDF.</p>
+   <p>To ensure these sets of statements remain closed in definition, exchange and processing of the data and context,
+graph merge operations at the RDF level must be prevented to ensure no changes happen to both the data and context definition.
+For this, we make use of blank node identifiers for the graph name of these named graphs. 
+This ensures the scope of the context definition and its association to a target set of statements is local to the scope of the 
+storage, exchange or operation in which they are used.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> if the use of blank nodes is impractical due to limitations of having to extract specific graphs from the local
+graphstore based on their name value, skolem identifiers can be used to ensure unique generation of the graph name
+at the time of its construction. Where in theory these can be used interchangeably, their hash values will differ.</p>
+   <div class="example" id="example-0c452cb6">
+    <a class="self-link" href="#example-0c452cb6"></a>
 
-<pre class="language-turtle highlight"><c- k>@prefix</c-> <c- nn>ca:</c-> <c- g>&lt;https://w3id.org/context-associations#></c-> <c- p>.</c->
 
-<c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- b>a</c-> <c- nn>rdfs</c-><c- p>:</c-><c- f>Class</c-> <c- p>;</c->
-<c- nn>rdfs</c-><c- p>:</c-><c- f>comment</c-> <c- s>"Identifiers interpreted as references to named graphs in the current dataset."</c-> <c- p>.</c->
+    <p>The data an metadata are published as blank node graphs</p>
+<pre class="language-turtle highlight"><c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>{</c->
+    <c- g>&lt;http://people.org/Bob#me></c-> <c- nn>foaf</c-><c- p>:</c-><c- f>name</c-> <c- s>"Bob"</c-> <c- p>.</c->
+        <c- nn>foaf</c-><c- p>:</c-><c- f>age</c-> <c- s>"27"</c-> <c- p>.</c->
+<c- p>}</c->
+
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- p>{</c->
+    <c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- nn>ex</c-><c- p>:</c-><c- f>creator</c-> <c- g>&lt;http://people.org/Bob#me></c-> <c- p>.</c->
+<c- p>}</c->
 </pre>
    </div>
-   <p>New ontology terms that establish graph references <strong>MUST</strong> declare their object range as <code>ca:LocalGraphReference</code>. For example:</p>
-   <div class="example" id="example-c0c57f6a">
-    <a class="self-link" href="#example-c0c57f6a"></a> 
+   <h3 class="heading settled" data-level="2.2" id="advertising-the-interpretation"><span class="secno">2.2. </span><span class="content">Advertising the interpretation</span><a class="self-link" href="#advertising-the-interpretation"></a></h3>
+   <p>Seconly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
+For this, the term <code>ca:LocalGraphReference</code> is introduced. This term defines the identifier on which it is defined as being used only
+as the reference for a named graph local to the current document or operation scope.</p>
+   <div class="example" id="example-278eee69">
+    <a class="self-link" href="#example-278eee69"></a>
 
-<pre class="language-turtle highlight"><c- k>@prefix</c-> <c- nn>rdf:</c-> <c- g>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#></c-> <c- p>.</c->
-<c- k>@prefix</c-> <c- nn>rdfs:</c-> <c- g>&lt;http://www.w3.org/2000/01/rdf-schema#></c-> <c- p>.</c->
-<c- k>@prefix</c-> <c- nn>ca:</c-> <c- g>&lt;https://w3id.org/context-associations#></c-> <c- p>.</c->
-<c- k>@prefix</c-> <c- nn>myOntology:</c-> <c- g>&lt;https://example.org/myOntology#></c-> <c- p>.</c->
 
-<c- nn>myOntology</c-><c- p>:</c-><c- f>graphTarget</c-> <c- b>a</c-> <c- nn>rdf</c-><c- p>:</c-><c- f>Property</c-> <c- p>;</c->
-    <c- nn>rdfs</c-><c- p>:</c-><c- f>range</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- p>;</c->
-    <c- nn>rdfs</c-><c- p>:</c-><c- f>comment</c-> <c- s>"This property points to a target graph."</c-> <c- p>.</c->
+    <p>This identifier can be directly embedded in the RDF data</p>
+<pre class="language-turtle highlight"><c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c-> <c- p>.</c->
+
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c-> <c- p>.</c->
+</pre>
+    <p>Or it can be defined as the range or domain of a predicate in its OWL definition.</p>
+<pre>myOntology:hasGraphTarget a rdf:Property ;
+    rdfs:range ca:LocalGraphReference ;
+    rdfs:comment "This property points to a target named graph." .
 </pre>
    </div>
-   <p>This approach provides a uniform mechanism for linking resources to named graphs while allowing
-new ontologies to define their own domain-specific predicates with consistent and unambiguous semantics.</p>
-   <h2 class="heading settled" data-level="3" id="interpretation"><span class="secno">3. </span><span class="content">Interpreting the graph reference</span><a class="self-link" href="#interpretation"></a></h2>
-   <p>Any identifier declared as a ca:LocalGraphReference MUST be interpreted as local to the scope of the current RDF dataset.
-No distinction is made between dereferenceable and non-dereferenceable IRIs, since this specification does not require or permit dereferencing of graph names.</p>
-   <p>When a blank node is used as a graph name, the reference MUST be treated as strictly local.
-The scope of such a named graph is limited to the current dataset, and blank node graph names MUST NOT be merged across datasets, 
-following the RDF rules for blank node relabeling when data is combined from multiple sources.</p>
-   <p>When an IRI is used as a graph name, it MUST also be interpreted as a local graph reference.
-Clients MUST NOT attempt to dereference such identifiers for the purpose of resolving the graph contents. 
-The interpretation of the identifier is restricted to its role as the name of a graph within the dataset under evaluation.</p>
-   <p>This uniform treatment ensures that all ca:LocalGraphReference identifiers are resolved consistently within the local dataset scope, without external dependencies.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> When two RDF datasets are merged, the specification dictates that named graphs with the same graph name identifier are to be combined.
-To prevent unwanted merging of named graphs, blank nodes SHOULD be used as graph names whenever the named graphs are intended to remain distinct across datasets.</p>
-   <h2 class="heading settled" data-level="4" id="processing"><span class="secno">4. </span><span class="content">Processing a <code>ca:LocalGraphReference</code></span><a class="self-link" href="#processing"></a></h2>
-   <p>For a client evaluating an RDF dataset containing identifiers of type <code>ca:LocalGraphReference</code>,
-this must be interpreted as denoting <strong>all quads in the local RDF dataset whose graph term matches the referenced identifier</strong>.</p>
-   <div class="example" id="example-61407da6">
-    <a class="self-link" href="#example-61407da6"></a>
-For a dataset 
+   <h3 class="heading settled" data-level="2.3" id="ensuring-completeness"><span class="secno">2.3. </span><span class="content">Ensuring completeness</span><a class="self-link" href="#ensuring-completeness"></a></h3>
+   <p>Finally, to ensure the completeness of both data and associated context when exchanging information in situations where completeness
+is not guaranteed, for example in continuous streams of RDF data, a hash value can be provided over the canonicalized 
+representation of a named graph using <a href="http://w3.org/TR/rdf-canon/">RDF Dataset Canonicalization</a>, that allows incoming 
+data to be verified on completeness.</p>
+   <div class="example" id="example-1bf75db8">
+    <a class="self-link" href="#example-1bf75db8"></a>
 
 
-<pre class="language-turtle highlight"><c- g>&lt;metadata></c-> <c- nn>myOntology</c-><c- p>:</c-><c- f>graphTarget</c-> <c- nn>_</c-><c- p>:</c-><c- f>graph</c-><c- p>.</c->
-<c- g>&lt;a></c-> <c- g>&lt;b></c-> <c- g>&lt;c></c-> <c- nn>_</c-><c- p>:</c-><c- f>graph</c-><c- p>.</c->
-<c- g>&lt;x></c-> <c- g>&lt;y></c-> <c- g>&lt;z></c-> <c- nn>_</c-><c- p>:</c-><c- f>graph</c-><c- p>.</c->
-<c- c># entailed</c->
-<c- nn>_</c-><c- p>:</c-><c- f>graph</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-><c- p>.</c->
-</pre>
-    <p>the interpretation of the metadata target MUST conform to the set of quads defined by the graph identifier in the local RDF dataset.</p>
-<pre>&lt;a> &lt;b> &lt;c> _:graph.
-&lt;x> &lt;y> &lt;z> _:graph.
+    <p>The data an metadata are published as blank node graphs</p>
+<pre class="language-turtle highlight"><c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- nn>ca</c-><c- p>:</c-><c- f>hash</c-> <c- s>"..."</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c-> 
+
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- nn>ca</c-><c- p>:</c-><c- f>hash</c-> <c- s>"..."</c-> <c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c-> 
 </pre>
    </div>
-   <h2 class="heading settled" data-level="5" id="example"><span class="secno">5. </span><span class="content">Examples</span><a class="self-link" href="#example"></a></h2>
+   <h2 class="heading settled" data-level="3" id="interpreting-the-named-graphs"><span class="secno">3. </span><span class="content">Interpreting the named graphs</span><a class="self-link" href="#interpreting-the-named-graphs"></a></h2>
+   <p>To a processing client, the interpretation of RDF data that include context associations relies on the ability to understand references to named graphs in the data. To prevent ambiguity, the above publishing approcah provides certain affordances to help the client.</p>
+   <p>Any client encountering a reference to a term that is defined as a <code>ca:LocalGraphReference</code>, must be interpreted as a reference to the named graph. Syntactically, this covers the set of quads of which the graph term is equal to the graph name. Semantically, this covers the interpretation of the target graph as subject to the contextual references that are associated to this graph.</p>
+   <p>The use of blank node identifiers minimizes the danger of misunderstanding the graph reference, as the graph name identifier cannot be misconstrued as a reference that leaves the local RDF scope, and should not be used for any use other than as a reference for its named graph.</p>
+   <p>The availability of content hashes helps ensure consistency even in cases such as streaming RDF where the scope of blank nodes is not well-defined.</p>
+   <h2 class="heading settled" data-level="4" id="examples"><span class="secno">4. </span><span class="content">Examples</span><a class="self-link" href="#examples"></a></h2>
    
 To demonstrate this, we take a small example of a set of data that is annotated with metadata within the local RDF dataset.
 
 
-   <div class="example" id="example-df63aea8">
-    <a class="self-link" href="#example-df63aea8"></a>
+   <div class="example" id="example-c83332ad">
+    <a class="self-link" href="#example-c83332ad"></a>
 Ruben has a set of data statements about himself issued by a government instance.
 
 
@@ -2166,7 +2187,8 @@ Ruben has a set of data statements about himself issued by a government instance
     <p>However, as Ruben wants to prove his age to an external actor,
 he requests a signed representation by the issuing instance that defines its <code>targetGraph</code> predicate to have an <code>rdfs:range</code> of <code>ca:LocalGraphReference</code>.</p>
     <p>Providing the following OWL definition</p>
-<pre class="language-turtle highlight"><c- k>@prefix</c-> <c- nn>rdf:</c-> <c- g>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#></c-> <c- p>.</c->
+<pre class="language-turtle highlight"><c- k>@prefix</c-> <c- nn>ca:</c-> <c- g>&lt;https://w3id.org/context-associations#></c-> <c- p>.</c->
+<c- k>@prefix</c-> <c- nn>rdf:</c-> <c- g>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#></c-> <c- p>.</c->
 <c- k>@prefix</c-> <c- nn>rdfs:</c-> <c- g>&lt;http://www.w3.org/2000/01/rdf-schema#></c-> <c- p>.</c->
 <c- k>@prefix</c-> <c- nn>sign:</c-> <c- g>&lt;http://example.org/ns/sign#></c-><c- p>.</c-> 
 <c- k>@prefix</c-> <c- nn>prov:</c-> <c- g>&lt;http://example.org/ns/prov#></c-><c- p>.</c-> 
@@ -2188,22 +2210,56 @@ he requests a signed representation by the issuing instance that defines its <co
 <c- k>@prefix</c-> <c- nn>rdfs:</c-> <c- g>&lt;http://www.w3.org/2000/01/rdf-schema#></c-><c- p>.</c-> 
 <c- k>@prefix</c-> <c- nn>ca:</c-> <c- g>&lt;https://w3id.org/context-associations#></c-><c- p>.</c->  
 
-<c- nn>_</c-><c- p>:</c-><c- f>dataGraph</c-> <c- p>{</c->
-    <c- g>&lt;http://people.org/ruben></c-> <c- nn>foaf</c-><c- p>:</c-><c- f>name</c-> <c- s>"Ruben"</c-><c- p>;</c->
-        <c- nn>foaf</c-><c- p>:</c-><c- f>age</c-> <c- mi>28</c-><c- p>.</c->
-<c- p>}</c->
-<c- nn>_</c-><c- p>:</c-><c- f>provGraph</c-> <c- p>{</c->
-    <c- nn>_</c-><c- p>:</c-><c- f>dataRetrieval</c-> <c- nn>prov</c-><c- p>:</c-><c- f>contentGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>dataGraph</c->
-        <c- nn>prov</c-><c- p>:</c-><c- f>source</c-> <c- g>&lt;http://gov.org/registry/14/></c-><c- p>.</c->
-<c- p>}</c->
-<c- nn>_</c-><c- p>:</c-><c- f>signGraph</c-> <c- p>{</c->
-    <c- nn>_</c-><c- p>:</c-><c- f>s</c-> <c- b>a</c-> <c- nn>sign</c-><c- p>:</c-><c- f>Signature</c-><c- p>;</c->
-        <c- nn>sign</c-><c- p>:</c-><c- f>targetGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>dataGraph</c-><c- p>;</c->
-        <c- nn>sign</c-><c- p>:</c-><c- f>issuer</c-> <c- g>&lt;http://gov.org/issuers/14></c-><c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>{</c->
+    <c- g>&lt;http://people.org/ruben></c-> <c- nn>foaf</c-><c- p>:</c-><c- f>name</c-> <c- s>"Ruben"</c-> <c- p>;</c->
+        <c- nn>foaf</c-><c- p>:</c-><c- f>age</c-> <c- mi>28</c-> <c- p>.</c->
 <c- p>}</c->
 
-<c- c># rdfs-entailment</c->
-<c- nn>_</c-><c- p>:</c-><c- f>dataGraph</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>localGraphReference</c-><c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>retrieval</c-> <c- nn>prov</c-><c- p>:</c-><c- f>contentGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>;</c->
+    <c- nn>prov</c-><c- p>:</c-><c- f>source</c-> <c- g>&lt;http://gov.org/registry/14/></c-> <c- p>;</c->
+    <c- nn>prov</c-><c- p>:</c-><c- f>actor</c-> <c- g>&lt;http://people.org/ruben></c-> <c- p>.</c->
+
+<c- nn>_</c-><c- p>:</c-><c- f>s</c-> <c- b>a</c-> <c- nn>sign</c-><c- p>:</c-><c- f>Signature</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>targetGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>issuer</c-> <c- g>&lt;http://gov.org/issuers/14></c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>proofValue</c-> <c- s>"..."</c-> <c- p>.</c->
+
+<c- c># entailed</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-><c- p>.</c->
+</pre>
+    <p>For which now recursively, the user can sign its own metadata graph,
+providing validation of both the source data and the metadata by 
+verifying signatures of different issuers.</p>
+<pre class="language-turtle highlight"><c- k>@prefix</c-> <c- nn>dcterms:</c-> <c- g>&lt;http://purl.org/dc/terms/></c-><c- p>.</c->
+<c- k>@prefix</c-> <c- nn>foaf:</c-> <c- g>&lt;http://xmlns.com/foaf/0.1/></c-><c- p>.</c->
+<c- k>@prefix</c-> <c- nn>xsd:</c-> <c- g>&lt;http://www.w3.org/2001/XMLSchema#></c-><c- p>.</c->
+<c- k>@prefix</c-> <c- nn>sign:</c-> <c- g>&lt;http://example.org/ns/sign#></c-><c- p>.</c-> 
+<c- k>@prefix</c-> <c- nn>prov:</c-> <c- g>&lt;http://example.org/ns/prov#></c-><c- p>.</c-> 
+<c- k>@prefix</c-> <c- nn>rdfs:</c-> <c- g>&lt;http://www.w3.org/2000/01/rdf-schema#></c-><c- p>.</c-> 
+<c- k>@prefix</c-> <c- nn>ca:</c-> <c- g>&lt;https://w3id.org/context-associations#></c-><c- p>.</c->  
+
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>{</c-> <c- p>...</c-> <c- p>}</c->
+
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- p>{</c->
+    <c- nn>_</c-><c- p>:</c-><c- f>retrieval</c-> <c- nn>prov</c-><c- p>:</c-><c- f>contentGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>;</c->
+        <c- nn>prov</c-><c- p>:</c-><c- f>source</c-> <c- g>&lt;http://gov.org/registry/14/></c-> <c- p>;</c->
+        <c- nn>prov</c-><c- p>:</c-><c- f>actor</c-> <c- g>&lt;http://people.org/ruben></c-> <c- p>.</c->
+<c- p>}</c->
+
+<c- nn>_</c-><c- p>:</c-><c- f>meta_s</c-> <c- b>a</c-> <c- nn>sign</c-><c- p>:</c-><c- f>Signature</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>targetGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>issuer</c-> <c- g>&lt;http://people.org/ruben></c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>proofValue</c-> <c- s>"..."</c-> <c- p>.</c->
+ 
+
+<c- nn>_</c-><c- p>:</c-><c- f>s</c-> <c- b>a</c-> <c- nn>sign</c-><c- p>:</c-><c- f>Signature</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>targetGraph</c-> <c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>issuer</c-> <c- g>&lt;http://gov.org/issuers/14></c-> <c- p>;</c->
+    <c- nn>sign</c-><c- p>:</c-><c- f>proofValue</c-> <c- s>"..."</c-> <c- p>.</c->
+
+<c- c># entailed</c->
+<c- nn>_</c-><c- p>:</c-><c- f>data</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-><c- p>.</c->
+<c- nn>_</c-><c- p>:</c-><c- f>meta</c-> <c- b>a</c-> <c- nn>ca</c-><c- p>:</c-><c- f>LocalGraphReference</c-><c- p>.</c->
 </pre>
    </div>
    <h2 class="heading settled" id="appendix-a-considerations"><span class="content">Appendix A: Considerations</span><a class="self-link" href="#appendix-a-considerations"></a></h2>

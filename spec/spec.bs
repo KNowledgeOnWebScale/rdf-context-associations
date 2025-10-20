@@ -49,7 +49,7 @@ information is tied to what target graph of statements, as well as being exact i
 information and the extent of the target set of statements. Additionally, we must hint to a consuming client 
 that a specific interpretation of the context definition with regards to the targeted graph of statements is required.
 
-### Closing the open world
+## Closing the open world
 
 To solve the problem of exactly defining the sets of context statements and its targeted data,
 we need to restrict the open world interpretation of RDF to concrete and closed sets of statements
@@ -80,7 +80,7 @@ _:meta {
 ```
 </div>
 
-### Advertising the interpretation
+## Advertising the interpretation
 
 Seconly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
 For this, the term `ca:LocalGraphReference` is introduced. This term defines the identifier on which it is defined as being used only
@@ -106,7 +106,7 @@ myOntology:hasGraphTarget a rdf:Property ;
 
 </div>
 
-### Ensuring completeness
+## Ensuring completeness
 
 Finally, to ensure the completeness of both data and associated context when exchanging information in situations where completeness
 is not guaranteed, for example in continuous streams of RDF data, a hash value can be provided over the canonicalized 

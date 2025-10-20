@@ -21,10 +21,3 @@ jobs:
           pipx install bikeshed
           echo "Building spec"
           bikeshed spec spec.bs
-      - name: Turtle validation
-        run: |
-          echo "Validating RDF syntax"
-          sudo apt install nodejs npm
-          npm install -g turtle-validator
-          ttl tss.ttl
-

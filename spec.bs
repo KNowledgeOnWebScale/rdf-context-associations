@@ -9,7 +9,7 @@ Abstract:
   (e.g., provenance, policies, signatures, or other metadata) with a target RDF Graph by
   using named graphs as the unit of association. The pattern is designed for robust,
   best-effort processing when exchanging RDF datasets across ecosystem boundaries.
-Markup Shorthands: markdown yes 
+Markup Shorthands: markdown yes
 Boilerplate: logo no, conformance no, index no
 </pre>
 
@@ -53,72 +53,75 @@ table th.last {
 }
 </style>
 
-
 Introduction {#introduction}
-=====================
+===========================
 
-RDF datasets support a default graph and zero or more **named graphs**, where each named graph is a pair of a **graph name** (an IRI or a blank node) and an RDF graph. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
+RDF datasets support a default graph and zero or more **named graphs**, where each named graph is a pair of a **graph name**
+(an IRI or a blank node) and an RDF graph. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
 
-However, RDF does not standardize a single formal semantics for *datasets as a whole*, and graph names are not given an agreed universal meaning beyond their structural role in the dataset. [W3C](https://www.w3.org/TR/rdf11-datasets/)
+However, RDF does not standardize a single formal semantics for *datasets as a whole*, and graph names are not given an agreed
+universal meaning beyond their structural role in the dataset. [W3C](https://www.w3.org/TR/rdf11-datasets/)
 
-This specification defines a **minimal exchange pattern**: use named graphs as *units of assertion/context*, and use a triple in a *context graph* to indicate which *target graph* it contextualizes.
+This specification defines a **minimal exchange pattern**: use named graphs as *units of assertion/context*, and use a triple
+in a *context graph* to indicate which *target graph* it contextualizes.
 
 Conformance {#conformance}
-===========
+=========================
 
-Conformance requirements are expressed with a combination of descriptive assertions and RFC 2119 terminology. 
-The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, 
-and “OPTIONAL” in the normative parts of this document are to be interpreted as described in RFC 2119. However, 
+Conformance requirements are expressed with a combination of descriptive assertions and RFC 2119 terminology.
+The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”,
+and “OPTIONAL” in the normative parts of this document are to be interpreted as described in RFC 2119. However,
 for readability, these words do not appear in all uppercase letters in this specification.
 
-All of the text of this specification is normative except sections explicitly marked as non-normative, examples, 
+All of the text of this specification is normative except sections explicitly marked as non-normative, examples,
 and notes. [[RFC2119]]
 
 Terminology {#terminology}
-===========
+=========================
 
 The following terminology is used throughout the specification document:
 
--   **Dataset**: An RDF dataset as defined in RDF Concepts. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
-    
--   **Graph name**: The IRI or blank node that names a named graph in the dataset. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
-    
--   **Target graph**: A named graph in the dataset that is the subject of contextual statements.
-    
--   **Context graph**: A named graph that contains a `ca:aboutGraph` statement identifying a target graph.
-    
--   **Graph reference**: An RDF term that is used as a graph name in the dataset (optionally skolemized; see [[#skolemids]]).
-    
+- **Dataset**: An RDF dataset as defined in RDF Concepts. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
+
+- **Graph name**: The IRI or blank node that names a named graph in the dataset. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
+
+- **Target graph**: A named graph in the dataset that is the subject of contextual statements.
+
+- **Context graph**: A named graph that contains a `ca:aboutGraph` statement identifying a target graph.
+
+- **Graph reference**: An RDF term that is used as a graph name in the dataset (optionally skolemized; see [[#skolemids]]).
 
 Data model and core idea {#datamodel}
-===========
+====================================
 
 A **context association** is represented by:
 
-1.  A **target named graph** `T` (graph name = `t`), containing data triples.
-    
-2.  A **context named graph** `C` (graph name = `c`), containing context triples, including the **anchor triple**:
-    
+1. A **target named graph** `T` (graph name = `t`), containing data triples.
+
+2. A **context named graph** `C` (graph name = `c`), containing context triples, including the **anchor triple**:
 
 > `c ca:aboutGraph t .`
 
 This anchor makes the association **self-describing** and machine-discoverable without needing out-of-band conventions.
 
-## 3.1. Minimal semantics (normative) ## {#minimalsemantics}
+Minimal semantics (normative) {#minimalsemantics}
+===========
 
 Given a dataset `D`:
 
--   If a named graph `C` in `D` contains the triple `(c, ca:aboutGraph, t)`, then `C` is a **context graph** and `t` is its **target graph reference**.
-    
--   For processing under this specification, the **context statements** are all other triples in graph `C` (i.e., excluding the anchor triple).
-    
--   The **context association** expresses that the context statements are intended to be interpreted *with respect to* the target named graph whose graph name is `t` **in the same dataset**.
-    
+- If a named graph `C` in `D` contains the triple `(c, ca:aboutGraph, t)`, then `C` is a **context graph** and `t` is its **target graph reference**.
 
-This specification does **not** require that context statements entail the triples in the target graph being asserted in the default graph (i.e., no “automatic lifting” of triples).
+- For processing under this specification, the **context statements** are all other triples in graph `C` (i.e., excluding the anchor triple).
+
+- The **context association** expresses that the context statements are intended to be interpreted *with respect to* the target named graph whose graph name is `t` **in the same dataset**.
+
+- The target graph is interpreted as the **set of triples** contained in the named graph identified by `t` (not as a set of quads).
+
+This specification does **not** require that context statements entail the triples in the target graph being asserted in the default graph
+(i.e., no “automatic lifting” of triples).
 
 Vocabulary (normative) {#vocabulary}
-===========
+===================================
 
 All terms are in:
 
@@ -126,8 +129,9 @@ All terms are in:
 @prefix ca: <https://w3id.org/context-associations#> .
 ```
 
-## `ca:aboutGraph` ## {#aboutgraph}
- 
+`ca:aboutGraph` {#aboutgraph}
+----------
+
 -   **Type**: `rdf:Property`
     
 -   **Intended meaning**: Links a context graph (by its graph name) to the graph name of its target graph.
@@ -135,104 +139,104 @@ All terms are in:
 
 **Constraint (normative):**
 
--   A context graph **MUST** contain **exactly one** `ca:aboutGraph` triple whose subject is the context graph’s own graph name.
+-   A context graph must contain **exactly one** `ca:aboutGraph` triple whose subject is the context graph’s own graph name.
     
 
-(If you want multi-target context graphs later, that can be an extension profile, but “exactly one” keeps discovery + chaining simple.)
-
-##Optional round-trip/import terms (non-normative but recommended) ## {#roundtripterms}
+Optional round-trip/import terms (non-normative) {#roundtripterms}
+---------------
 
 These are optional affordances for receivers who relabel graph identifiers on ingest:
 
--   `ca:sourceGraphName` — stores the **original** graph identifier from the sender (IRI or blank node label or skolem IRI).
+-   `ca:sourceGraphName` — stores the **original** graph identifier from the sender (IRI, blank node label, or skolem IRI).
     
 -   `ca:assertedIn` — indicates that the target triples were originally asserted in some graph (including the default graph).
     
 -   `ca:DefaultGraph` — a constant used as an object of `ca:assertedIn` to refer to the dataset default graph (since it has no RDF term name).
     
 
-(These keep your “exchange first, local optimization later” story workable without bloating core semantics.)
-
 Examples (informative) {#examples}
-===================
+===========
 
-## Simple metadata about a data graph (TriG) ## {#metadata}
+Note: These examples are written in **N-Quads** to avoid TriG-specific syntax in Bikeshed compilation.  
+TriG and N-Quads are both suitable dataset exchange syntaxes for context associations. [W3C](https://www.w3.org/TR/rdf12-trig/?utm_source=chatgpt.com)
 
-TriG allows graph labels to be IRIs or blank nodes and allows them to reoccur in triples. [W3C](https://www.w3.org/TR/rdf12-trig/)
+Simple metadata about a data graph (N-Quads) {#metadata}
+----------
 
-```turtle
+```
 @prefix ca: <https://w3id.org/context-associations#> .
-@prefix : <https://example.org/ns#> .
+@prefix :  <https://example.org/ns#> .
 
-_:data {
-  <x> <y> <z> .
-}
+<x> <y> <z> _:data .
 
-_:ctx {
-  _:ctx ca:aboutGraph _:data .
-  _:data :author <Bob> .
-  _:data :retrievedFrom <https://source.example/> .
-}
+_:ctx ca:aboutGraph _:data _:ctx .
+_:data :author <Bob> _:ctx .
+_:data :retrievedFrom <https://source.example/> _:ctx .
 ```
 
-## Chaining (context about context) ## {#chaining}
+Chaining (context about context) {#chaining}
+----------
 
-```turtle
+```
 @prefix ca: <https://w3id.org/context-associations#> .
-@prefix : <https://example.org/ns#> .
+@prefix :  <https://example.org/ns#> .
 
-_:data { <x> <y> <z> . }
+<x> <y> <z> _:data .
 
-_:policy {
-  _:policy ca:aboutGraph _:data .
-  _:data :allowedPurpose :Analytics .
-}
+_:policy ca:aboutGraph _:data _:policy .
+_:data :allowedPurpose :Analytics _:policy .
 
-_:sig {
-  _:sig ca:aboutGraph _:policy .
-  _:policy :signatureValue "..." .
-  _:policy :verificationKey <did:example:123#k1> .
-}
+_:sig ca:aboutGraph _:policy _:sig .
+_:policy :signatureValue "..." _:sig .
+_:policy :verificationKey <did:example:123#k1> _:sig .
 ```
 
 Graph identifiers and exchange profiles {#identifiersandprofiles}
-==============
+==========
 
-## Blank node graph names (recommended default) ## {#blanknodenames}
+Blank node graph names (recommended default) {#blanknodenames}
+----------
 
-Graph names MAY be blank nodes. RDF Concepts defines blank nodes as not identifying specific resources, and TriG permits blank nodes as graph labels. [W3C](https://www.w3.org/TR/rdf12-concepts/)
+Graph names may be blank nodes. RDF Concepts defines blank nodes as not identifying specific resources, and TriG permits blank nodes as graph labels.  
+[W3C](https://www.w3.org/TR/rdf12-concepts/?utm_source=chatgpt.com)
 
-This specification **RECOMMENDS** using blank nodes for graph names participating in context associations when the goal is to avoid unintended co-reference/merge across unrelated datasets.
+This specification recommends using blank nodes for graph names participating in context associations when the goal is to avoid unintended  
+co-reference/merge across unrelated datasets.
 
-## Skolemized identifiers (optional) ## {#skolemids}
+Skolemized identifiers (optional) {#skolemids}
+----------
 
-Implementations MAY replace blank nodes with Skolem IRIs, and systems doing so SHOULD mint globally unique IRIs for each blank node. [W3C](https://www.w3.org/2011/rdf-wg/wiki/Skolemisation)
+Implementations may replace blank nodes with Skolem IRIs, and systems doing so should mint globally unique IRIs for each blank node.  
+[W3C](https://www.w3.org/2011/rdf-wg/wiki/Skolemisation?utm_source=chatgpt.com)
 
-Skolemization can improve addressability and compatibility with systems/protocols that require graph IRIs (e.g., Graph Store HTTP Protocol expects an IRI for each named graph). [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/)
+Skolemization can improve addressability and compatibility with systems/protocols that require graph IRIs  
+(e.g., Graph Store HTTP Protocol expects an IRI for each named graph). [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/?utm_source=chatgpt.com)
 
 **Import guidance (non-normative):**
 
--   When importing datasets across untrusted boundaries, a receiver MAY relabel incoming skolem graph identifiers to fresh local identifiers to prevent accidental or adversarial co-reference, while preserving the sender identifier via `ca:sourceGraphName`.
+-   When importing datasets across untrusted boundaries, a receiver may relabel incoming skolem graph identifiers to fresh local identifiers  
+    to prevent accidental or adversarial co-reference, while preserving the sender identifier via `ca:sourceGraphName`.
     
 
 Processing algorithm (normative) {#algorithm}
-================
+===========
 
-A conforming **CA processor** MUST implement the following:
+A conforming **CA processor** must implement the following:
 
 1.  Parse the input as an RDF dataset.
     
 2.  For each named graph `C` with graph name `c`, find triples `(c, ca:aboutGraph, t)` **within `C`**.
     
-3.  If there is exactly one such triple, treat `C` as a context graph targeting `t`.
+3.  If there is exactly one such triple, treat `C` as a context graph targeting `t`. Otherwise, `C` is not a valid context graph under this specification.
     
 4.  The association output is a set of pairs `(c -> t)` plus the set of context triples in `C` excluding the anchor triple.
     
-5.  A processor MUST NOT assume that `t` is globally meaningful outside the dataset scope unless an application profile explicitly says so (e.g., trusted skolem IDs).
+5.  A processor must not assume that `t` is globally meaningful outside the dataset scope unless an application profile explicitly says so  
+    (e.g., trusted skolem IDs).
     
 
-Dataset Conformance {#datasetconformance}
-====================
+Dataset conformance {#datasetconformance}
+===========
 
 A dataset conforms to this specification if:
 
@@ -244,17 +248,21 @@ A dataset conforms to this specification if:
     
 
 Interoperability notes (informative) {#notes}
-=================
+===========
 
--   TriG and N-Quads are natural exchange syntaxes for context associations because they represent datasets and support blank node graph labels. [W3C](https://www.w3.org/TR/rdf12-trig/)
+-   TriG and N-Quads are natural exchange syntaxes for context associations because they represent datasets and support blank node graph labels.  
+    [W3C](https://www.w3.org/TR/rdf12-trig/?utm_source=chatgpt.com)
     
--   Systems that manage named graphs via Graph Store HTTP Protocol require graph IRIs; blank node graph names may need skolemization or local relabeling for such workflows. [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/)
+-   Systems that manage named graphs via Graph Store HTTP Protocol require graph IRIs; blank node graph names may need skolemization or local relabeling  
+    for such workflows. [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/?utm_source=chatgpt.com)
     
 
 Security considerations (informative) {#security}
-=================
+===========
 
--   If skolem graph identifiers are treated as globally authoritative, an attacker may attempt IRI collision to cause unintended merges. Consider relabel-on-ingest at trust boundaries (§6.2).
+-   If skolem graph identifiers are treated as globally authoritative, an attacker may attempt IRI collision to cause unintended merges.  
+    Consider relabel-on-ingest at trust boundaries (see \[\[#skolemids\]\]).
     
--   Context associations are compatible with signing, but signatures require canonicalization of RDF content (e.g., RDFC-1.0). This specification does not define a signature format. [W3C](https://www.w3.org/TR/rdf-canon/)
+-   Context associations are compatible with signing, but signatures require canonicalization of RDF content (e.g., RDFC-1.0).  
+    This specification does not define a signature format. [W3C](https://www.w3.org/TR/rdf-canon/?utm_source=chatgpt.com)
     

@@ -1,348 +1,260 @@
 <pre class='metadata'>
-Title: RDF Context Associations Specification
-Shortname: RDF CA Spec
-Level: none
+Title: Context Associations in RDF
+Shortname: context-associations
+Level: 1
 Status: LD
-Repository: KNowledgeOnWebScale/rdf-context-associations-spec
-URL: https://knowledgeonwebscale.github.io/rdf-context-associations-spec/
-Editor: Ruben Dedecker, IDLab - Ghent University, ruben.dedecker@ugent.be
-Editor: Pieter Colpaert, IDLab - Ghent University, https://pietercolpaert.be
-Abstract: This specification introduces the RDF Context Associations approach to the management of local references in RDF data for Web ecosystems built on RDF data.
-Markup Shorthands: markdown yes, css no
+ED: https://w3id.org/context-associations
+Abstract:
+  This specification defines a minimal RDF pattern for associating contextual information
+  (e.g., provenance, policies, signatures, or other metadata) with a target RDF Graph by
+  using named graphs as the unit of association. The pattern is designed for robust,
+  best-effort processing when exchanging RDF datasets across ecosystem boundaries.
+Markup Shorthands: markdown yes 
+Boilerplate: logo no, conformance no, index no
 </pre>
-<!-- Warning: Not Ready -->
-<!-- This specification proposes a convention based on named graphs defined with blank node graph names and SPARQL's GRAPH semantics to define local, self-contained statement groups that can be referenced reliably. Context Associations enable a structured and interoperable foundation for embedding context-rich metadata into RDF datasets without ambiguity, supporting use cases such as verifiable data, policy enforcement, and provenance tracking uniformly in the RDF data model over Web ecosystems. -->
 
-<!-- useful sources? -->
-<!-- [Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/) -->
-<!-- [Blank Node Relabeling](https://www.w3.org/TR/rdf11-mt/#shared-blank-nodes-unions-and-merges) -->
-<!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
-## Glossary
-
-
-
-| Term                      | Definition                                                                                                                                                        |
-|-------------------------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Context Association       | The association of contextual information to a **closed**, **local** target set of RDF statements encoded as a named graph. |
-| Context Statements        | The contextual statements (e.g., metadata, provenance, policy) of a context association that target a named graph in the local RDF scope. |
-| Named Graph               | An RDF 1.1 **named graph** (a set of triples identified by a graph name) used here to encapsulate target statements and keep their scope local.                   |
-| Blank Node Identifier     | An RDF **blank node** identifier, in this context mostly used as the name value of an RDF named graph.|
-| Content Hash (named graph)| A cryptographic **hash** of the canonicalized representation of a named graph, evaluated via RDF Dataset Canonicalization |
-| RDF Stream                | A stream of RDF data elements; see the W3C RDF Stream Processing Community Group for definitions and models.                                                      |
-
-
-
-Introduction
-============
-
-The use of named graphs in RDF has been a widely discussed topic in the RDF community. 
-From the initial publication in 2005 [[carroll2005named]], to their introduction in the RDF standard in version 1.1,
-named graphs see varied adoption for different use-cases throughout RDF ecosystems. 
-
-With their introduction in the RDF standard, the interpretation of named graphs was left intentionally blank
-due to the diverging interpretations that were in use at the moment of specification.
-Discussing the topic, the W3C working group provided a document [on the semantics of RDF datasets](https://www.w3.org/TR/rdf11-datasets/). 
-
-Due to the lack of overarching semantics, the use of named graphs finds itself constricted to specific use-cases
-and data models, limiting their overall usability for exchange and reuse across ecosystems. 
-
-With this minimal specification, we aim to provide a pragmatic approach for the management of 
-expressions of context over graphs of RDF statements. For this, we use named graphs as an indication
-of a shared context or meaning of a set of statements, that can be referenced using the graph name
-of the named graph in which this set of statements is embedded. 
-
-The definition of a context association is that 
-**a context association is an association of a target set of triples encoded as a named graph in RDF, where the blank node graph name identifier is referenced by a context definition in the local RDF scope. The graph name identifier MUST be interpreted with respect to its role as the name of a local named graph, and the target graph MUST syntactically be interpreted as the set of quads whose graph term is equal to that graph name. The association between the context definition and the target set of statements is local to the RDF scope, and the target set of statements MUST NOT be considered universally true or replicated in the default graph, but understood only within the scope of its named graph and the context associated with it.**
-
-Publishing RDF context associations
-===========================
-
-When publishing combined context and data, we must make sure the approach both is unambiguous in what context
-information is tied to what target graph of statements, as well as being exact in both its defined contextual
-information and the extent of the target set of statements. Additionally, we must hint to a consuming client 
-that a specific interpretation of the context definition with regards to the targeted graph of statements is required.
-
-## Closing the open world
-
-To solve the problem of exactly defining the sets of context statements and their targeted data,
-we need to restrict the open world interpretation of RDF to concrete and closed sets of statements
-that define exact sets of data statements and associated context statements, for which we use named graphs in RDF.
-
-To ensure these sets of statements remain closed in definition, exchange and processing of the data and context,
-graph merge operations at the RDF level must be prevented to ensure that no changes occur to either the data or the context statements.
-For this, we make use of blank node identifiers for the graph name of these named graphs. 
-This ensures the scope of the context statements and its association to a target set of statements is local to the scope of the 
-storage, exchange or operation in which they are used. 
-
-Note: if the use of blank nodes is impractical due to limitations of having to extract specific graphs from the local
-graphstore based on their name value, skolem identifiers can be used to ensure unique generation of the graph name
-at the time of its construction. Although in theory these can be used interchangeably, their hash values will differ.
-
-<div class=example>
-
-The data an metadata are published as blank node graphs
-```turtle
-_:data {
-    <http://people.org/Bob#me> foaf:name "Bob" .
-        foaf:age "27" .
+<style>
+p[data-fill-with="logo"] {
+  display: block;
+  float: right;
+  width: 150px;
+  height: 150px;
+  margin: 0.4rem 0 0.2rem .4rem;
+  background-image: url([LOGO])
 }
-
-_:meta {
-    _:data ex:creator <http://people.org/Bob#me> .
+table {
+  margin: 25px auto;
+  border-collapse: collapse;
+  border: 1px solid #eee;
+  border-bottom: 2px solid #005A9C;
 }
-```
-</div>
-
-## Advertising the interpretation
-
-Secondly, we need to ensure the consuming client is aware of how the incoming RDF data should be processed to draw valid conclusions.
-For this, the term `ca:LocalGraphReference` is introduced. This term defines the identifier on which it is defined as being used only
-as the reference for a named graph local to the current document or operation scope.
-
-<div class=example>
-
-This identifier can be directly embedded in the RDF data
-```turtle
-_:data a ca:LocalGraphReference .
-_:data { ... } .
-
-_:meta a ca:LocalGraphReference .
-_:meta { ... } .
-```
-
-Or it can be defined as the range or domain of a predicate in its OWL definition.
-```
-myOntology:hasGraphTarget a rdf:Property ;
-    rdfs:range ca:LocalGraphReference ;
-    rdfs:comment "This property points to a target named graph." .
-```
-
-</div>
-
-## Ensuring completeness
-
-Finally, in situations (e.g., continuous streams of RDF data) where completeness is not guaranteed, a hash value may be provided 
-over the canonicalized representation of a named graph using [RDF Dataset Canonicalization](http://w3.org/TR/rdf-canon/), 
-that allows incoming data to be verified on completeness.
-
-<div class=example>
-
-The data an metadata are published as blank node graphs
-```turtle
-_:data a ca:LocalGraphReference .
-_:data ca:hash "..." .
-_:data { ... } 
-
-_:meta a ca:LocalGraphReference .
-_:meta ca:hash "..." .
-_:meta { ... } 
-```
-</div>
+table tr:hover {
+  background: #f4f4f4;
+}
+table tr:hover td {
+  color: #555;
+}
+table th, table td {
+  color: #999;
+  border: 1px solid #eee;
+  padding: 12px 12px;
+  border-collapse: collapse;
+}
+table th {
+  background: #005A9C;
+  color: #fff;
+}
+table tbody > tr > th {
+  background: #fff;
+  color: #005A9C;
+}
+table th.last {
+  border-right: none;
+}
+</style>
 
 
+Introduction {#introduction}
+=====================
 
-Interpreting the named graphs
-===========================
+RDF datasets support a default graph and zero or more **named graphs**, where each named graph is a pair of a **graph name** (an IRI or a blank node) and an RDF graph. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
 
-To a processing client, the interpretation of RDF data that include context associations relies on the ability to understand references to named graphs in the data. To prevent ambiguity, the above publishing approach provides certain affordances to help the client.
+However, RDF does not standardize a single formal semantics for *datasets as a whole*, and graph names are not given an agreed universal meaning beyond their structural role in the dataset. [W3C](https://www.w3.org/TR/rdf11-datasets/)
 
-Any client encountering a reference to a term that is defined as a `ca:LocalGraphReference`, must be interpreted as a reference to the named graph. Syntactically, this covers the set of quads of which the graph term is equal to the graph name. Semantically, this covers the interpretation of the target graph as subject to the contextual references that are associated to this graph.
+This specification defines a **minimal exchange pattern**: use named graphs as *units of assertion/context*, and use a triple in a *context graph* to indicate which *target graph* it contextualizes.
 
-The use of blank node identifiers minimizes the danger of misunderstanding the graph reference, as the graph name identifier cannot be misconstrued as a reference that leaves the local RDF scope, and should not be used for any use other than as a reference for its named graph.
+Conformance {#conformance}
+===========
 
-The availability of content hashes helps ensure consistency even in cases such as streaming RDF where the scope of blank nodes is not well-defined.
+Conformance requirements are expressed with a combination of descriptive assertions and RFC 2119 terminology. 
+The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, 
+and “OPTIONAL” in the normative parts of this document are to be interpreted as described in RFC 2119. However, 
+for readability, these words do not appear in all uppercase letters in this specification.
 
+All of the text of this specification is normative except sections explicitly marked as non-normative, examples, 
+and notes. [[RFC2119]]
 
-Examples
-===================
-To demonstrate this, we take a small example of a set of data that is annotated with metadata within the local RDF dataset.
+Terminology {#terminology}
+===========
 
-<div class="example">
-Ruben has a set of data statements about himself issued by a government instance.
+The following terminology is used throughout the specification document:
 
-```turtle
-@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+-   **Dataset**: An RDF dataset as defined in RDF Concepts. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
+    
+-   **Graph name**: The IRI or blank node that names a named graph in the dataset. [W3C](https://www.w3.org/TR/2025/WD-rdf12-concepts-20250225/)
+    
+-   **Target graph**: A named graph in the dataset that is the subject of contextual statements.
+    
+-   **Context graph**: A named graph that contains a `ca:aboutGraph` statement identifying a target graph.
+    
+-   **Graph reference**: An RDF term that is used as a graph name in the dataset (optionally skolemized; see [[#skolemids]]).
+    
 
-<http://people.org/ruben> foaf:name "Ruben";
-    foaf:age 28.
-```
+Data model and core idea {#datamodel}
+===========
 
-However, as Ruben wants to prove his age to an external actor, 
-he requests a signed representation by the issuing instance that defines its `targetGraph` predicate to have an `rdfs:range` of `ca:LocalGraphReference`.
+A **context association** is represented by:
 
-Providing the following OWL definition
+1.  A **target named graph** `T` (graph name = `t`), containing data triples.
+    
+2.  A **context named graph** `C` (graph name = `c`), containing context triples, including the **anchor triple**:
+    
+
+> `c ca:aboutGraph t .`
+
+This anchor makes the association **self-describing** and machine-discoverable without needing out-of-band conventions.
+
+## 3.1. Minimal semantics (normative) ## {#minimalsemantics}
+
+Given a dataset `D`:
+
+-   If a named graph `C` in `D` contains the triple `(c, ca:aboutGraph, t)`, then `C` is a **context graph** and `t` is its **target graph reference**.
+    
+-   For processing under this specification, the **context statements** are all other triples in graph `C` (i.e., excluding the anchor triple).
+    
+-   The **context association** expresses that the context statements are intended to be interpreted *with respect to* the target named graph whose graph name is `t` **in the same dataset**.
+    
+
+This specification does **not** require that context statements entail the triples in the target graph being asserted in the default graph (i.e., no “automatic lifting” of triples).
+
+Vocabulary (normative) {#vocabulary}
+===========
+
+All terms are in:
+
 ```turtle
 @prefix ca: <https://w3id.org/context-associations#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix sign: <http://example.org/ns/sign#>. 
-@prefix prov: <http://example.org/ns/prov#>. 
-
-sign:targetGraph a rdfs:Property;
-    rdfs:range ca:LocalGraphReference;
-    rdfs:comment "The graph target of the signature." .
-
-prov:contentGraph a rdfs:Property;
-    rdfs:range ca:LocalGraphReference;
-    rdfs:comment "The graph defining the contents retrieved from a source." .
 ```
 
-and resulting data 
+## `ca:aboutGraph` ## {#aboutgraph}
+ 
+-   **Type**: `rdf:Property`
+    
+-   **Intended meaning**: Links a context graph (by its graph name) to the graph name of its target graph.
+    
+
+**Constraint (normative):**
+
+-   A context graph **MUST** contain **exactly one** `ca:aboutGraph` triple whose subject is the context graph’s own graph name.
+    
+
+(If you want multi-target context graphs later, that can be an extension profile, but “exactly one” keeps discovery + chaining simple.)
+
+##Optional round-trip/import terms (non-normative but recommended) ## {#roundtripterms}
+
+These are optional affordances for receivers who relabel graph identifiers on ingest:
+
+-   `ca:sourceGraphName` — stores the **original** graph identifier from the sender (IRI or blank node label or skolem IRI).
+    
+-   `ca:assertedIn` — indicates that the target triples were originally asserted in some graph (including the default graph).
+    
+-   `ca:DefaultGraph` — a constant used as an object of `ca:assertedIn` to refer to the dataset default graph (since it has no RDF term name).
+    
+
+(These keep your “exchange first, local optimization later” story workable without bloating core semantics.)
+
+Examples (informative) {#examples}
+===================
+
+## Simple metadata about a data graph (TriG) ## {#metadata}
+
+TriG allows graph labels to be IRIs or blank nodes and allows them to reoccur in triples. [W3C](https://www.w3.org/TR/rdf12-trig/)
+
 ```turtle
-@prefix dcterms: <http://purl.org/dc/terms/>.
-@prefix foaf: <http://xmlns.com/foaf/0.1/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix sign: <http://example.org/ns/sign#>. 
-@prefix prov: <http://example.org/ns/prov#>. 
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>. 
-@prefix ca: <https://w3id.org/context-associations#>.  
+@prefix ca: <https://w3id.org/context-associations#> .
+@prefix : <https://example.org/ns#> .
 
 _:data {
-    <http://people.org/ruben> foaf:name "Ruben" ;
-        foaf:age 28 .
+  <x> <y> <z> .
 }
 
-_:retrieval prov:contentGraph _:data ;
-    prov:source <http://gov.org/registry/14/> ;
-    prov:actor <http://people.org/ruben> .
-
-_:s a sign:Signature ;
-    sign:targetGraph _:data ;
-    sign:issuer <http://gov.org/issuers/14> ;
-    sign:proofValue "..." .
-
-# entailed
-_:data a ca:LocalGraphReference.
+_:ctx {
+  _:ctx ca:aboutGraph _:data .
+  _:data :author <Bob> .
+  _:data :retrievedFrom <https://source.example/> .
+}
 ```
 
-For which now recursively, the user can sign its own metadata graph, 
-providing validation of both the source data and the metadata by 
-verifying signatures of different issuers.
-
+## Chaining (context about context) ## {#chaining}
 
 ```turtle
-@prefix dcterms: <http://purl.org/dc/terms/>.
-@prefix foaf: <http://xmlns.com/foaf/0.1/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix sign: <http://example.org/ns/sign#>. 
-@prefix prov: <http://example.org/ns/prov#>. 
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>. 
-@prefix ca: <https://w3id.org/context-associations#>.  
+@prefix ca: <https://w3id.org/context-associations#> .
+@prefix : <https://example.org/ns#> .
 
-_:data { ... }
+_:data { <x> <y> <z> . }
 
-_:meta {
-    _:retrieval prov:contentGraph _:data ;
-        prov:source <http://gov.org/registry/14/> ;
-        prov:actor <http://people.org/ruben> .
+_:policy {
+  _:policy ca:aboutGraph _:data .
+  _:data :allowedPurpose :Analytics .
 }
 
-_:meta_s a sign:Signature ;
-    sign:targetGraph _:meta ;
-    sign:issuer <http://people.org/ruben> ;
-    sign:proofValue "..." .
- 
-
-_:s a sign:Signature ;
-    sign:targetGraph _:data ;
-    sign:issuer <http://gov.org/issuers/14> ;
-    sign:proofValue "..." .
-
-# entailed
-_:data a ca:LocalGraphReference.
-_:meta a ca:LocalGraphReference.
-```
-
-
-</div>
-
-
-
-
-Appendix A: Considerations
-==================
-
-This section discusses some considerations as to why certain decisions were made.
-
-## Why named graphs instead of reification / rdf-star / triple terms 
-
-The choice for named graphs is both a pragmatic choice of choosing an existing RDF standard
-that should be supported in all RDF 1.1 compatible tooling, that provides inherent support of 
-annotating sets of triples instead of individual triples. 
-Where reification and triple terms can be modeled as part of a collection or other entity that 
-defines a selection of triples, these do not provide an inherent boundary within the RDF dataset, 
-but is fully reliant on the documentation of the approach to indicate the intended boundary of that
-collection entity. Named graphs does not suffer from this problem, and provides an inherent boundary 
-of its contained triples from the default graph and the other named graphs of an RDF dataset
-
-Additionally, both [Evaluation of Metadata Representations in RDF stores](https://www.semantic-web-journal.net/content/evaluation-metadata-representations-rdf-stores)
-as well as an unpublished paper from our side found that named graphs provide competitive performance 
-with other annotation methods.
-
-## Syntactic scope of the named graph
-
-There are two possible interpretations in which a referenced named graph can be interpreted in RDF,
-as the set of quads where the term equals the given graph name, or the set of triples found by 
-stripping the graph term from this set of quads. 
-
-To process a referenced graph as a set of triples, in a pass-by-value way, an unpacking of the named graph is required,
-such as using the `GRAPH` keyword in SPARQL to unpackage a named graph in triple graph, or in notation3 using graph terms.
-
-However, the core RDF specification does not provide such an unpacking mechanism. Therefore, in order to enforce working with the graph
-in a by-value approach, an approach such as SPARQL is required that allows both the use of the graph identifier and working with
-the unpackaged triples at the same time.
-
-<div class=example>
-```SPARQL
-CONSTRUCT {
-    ?s ?p ?o.
-    ?g :issuer ?issuer.
-} WHERE {
-    GRAPH ?g {
-        ?s ?p ?o.
-    }
-    ?g :issuer ?issuer.
+_:sig {
+  _:sig ca:aboutGraph _:policy .
+  _:policy :signatureValue "..." .
+  _:policy :verificationKey <did:example:123#k1> .
 }
 ```
-</div>
 
-So unless a processing approach such as SPARQL can be enforced, the syntactic interpretation of named graphs must be constrained
-to its set of quads to retain consistency and functionality throughout the processing pipeline.
+Graph identifiers and exchange profiles {#identifiersandprofiles}
+==============
 
-## Semantic and syntactic interpretation of RDF named graphs
+## Blank node graph names (recommended default) ## {#blanknodenames}
 
-The semantics of named graphs have had extensive discussion previously in the semantic web community,
-much of which has been collected in a document published by the RDF working group 
-[On Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/).
+Graph names MAY be blank nodes. RDF Concepts defines blank nodes as not identifying specific resources, and TriG permits blank nodes as graph labels. [W3C](https://www.w3.org/TR/rdf12-concepts/)
 
-The evaluation of entailment regimes over RDF graphs is closely tied to the unpacking of said graphs
-in the RDF dataset. Therefore, it is left out of scope for this specification.
+This specification **RECOMMENDS** using blank nodes for graph names participating in context associations when the goal is to avoid unintended co-reference/merge across unrelated datasets.
 
-## Working with remote references
+## Skolemized identifiers (optional) ## {#skolemids}
 
-For practical purposes, we restrict the interpretation of graph references to local graphs. 
-This goes for blank nodes, dereferenceable URIs and non-dereferenceable URIs.
+Implementations MAY replace blank nodes with Skolem IRIs, and systems doing so SHOULD mint globally unique IRIs for each blank node. [W3C](https://www.w3.org/2011/rdf-wg/wiki/Skolemisation)
 
-The integration of remote graphs through the dereferencing requires a more holistic approach 
-that can resolve inconsistencies in the resulting dataset following a merge operation. 
-A similar approach can be seen with the use of `owl:imports` in Notation3 reasoning.
+Skolemization can improve addressability and compatibility with systems/protocols that require graph IRIs (e.g., Graph Store HTTP Protocol expects an IRI for each named graph). [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/)
 
+**Import guidance (non-normative):**
 
-<pre class=biblio>
-{
-  "carroll2005named": {
-    "href": "https://www.sciencedirect.com/science/article/pii/S1570826805000235",
-    "title": "Named graphs",
-    "authors": [
-        "Jeremy J. Carroll",
-        "Christian Bizer",
-        "Pat Hayes",
-        "Patrick Stickler"
-    ],
-    "publisher": "Journal of Web Semantics",
-    "date": "December 2005"
-  }
-}
-</pre>
+-   When importing datasets across untrusted boundaries, a receiver MAY relabel incoming skolem graph identifiers to fresh local identifiers to prevent accidental or adversarial co-reference, while preserving the sender identifier via `ca:sourceGraphName`.
+    
 
+Processing algorithm (normative) {#algorithm}
+================
 
+A conforming **CA processor** MUST implement the following:
+
+1.  Parse the input as an RDF dataset.
+    
+2.  For each named graph `C` with graph name `c`, find triples `(c, ca:aboutGraph, t)` **within `C`**.
+    
+3.  If there is exactly one such triple, treat `C` as a context graph targeting `t`.
+    
+4.  The association output is a set of pairs `(c -> t)` plus the set of context triples in `C` excluding the anchor triple.
+    
+5.  A processor MUST NOT assume that `t` is globally meaningful outside the dataset scope unless an application profile explicitly says so (e.g., trusted skolem IDs).
+    
+
+Dataset Conformance {#datasetconformance}
+====================
+
+A dataset conforms to this specification if:
+
+-   Every context graph contains exactly one anchor triple linking itself to its target graph via `ca:aboutGraph`.
+    
+-   The subject of `ca:aboutGraph` is identical to the context graph name.
+    
+-   The object of `ca:aboutGraph` is intended to denote a target graph name within the same dataset.
+    
+
+Interoperability notes (informative) {#notes}
+=================
+
+-   TriG and N-Quads are natural exchange syntaxes for context associations because they represent datasets and support blank node graph labels. [W3C](https://www.w3.org/TR/rdf12-trig/)
+    
+-   Systems that manage named graphs via Graph Store HTTP Protocol require graph IRIs; blank node graph names may need skolemization or local relabeling for such workflows. [W3C](https://www.w3.org/TR/sparql11-http-rdf-update/)
+    
+
+Security considerations (informative) {#security}
+=================
+
+-   If skolem graph identifiers are treated as globally authoritative, an attacker may attempt IRI collision to cause unintended merges. Consider relabel-on-ingest at trust boundaries (§6.2).
+    
+-   Context associations are compatible with signing, but signatures require canonicalization of RDF content (e.g., RDFC-1.0). This specification does not define a signature format. [W3C](https://www.w3.org/TR/rdf-canon/)
+    

@@ -19,14 +19,14 @@ Markup Shorthands: markdown yes, css no
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
 ## Glossary
 
-| Term                       | Definition |
-|---------------------------|------------|
-| Context Association       | The association of contextual information with a **closed**, **local** set of RDF statements represented as a named graph. |
-| Context Statements        | The contextual statements of a context association, such as metadata, provenance, or policy, that target a named graph within the local RDF scope. |
-| Named Graph               | An RDF 1.1 **named graph**, that is, a set of RDF triples identified by a graph name. In this specification, it is used to encapsulate target statements and keep their scope local. |
-| Blank Node Identifier     | An RDF **blank node** identifier. In this context, it is used primarily as the graph name of a local RDF named graph. |
-| Content Hash (named graph) | A cryptographic **hash** computed over the canonicalized representation of a named graph using RDF Dataset Canonicalization. |
-| RDF Stream                | A stream of RDF data elements processed or interpreted as an ordered sequence over time. |
+<pre class="simpledef">
+Context Association: The association of contextual information with a **closed**, **local** set of RDF statements represented as a named graph.
+Context Statements: The contextual statements of a context association, such as metadata, provenance, or policy, that target a named graph within the local RDF scope.
+Named Graph: An RDF 1.1 **named graph**, that is, a set of RDF triples identified by a graph name. In this specification, it is used to encapsulate target statements and keep their scope local.
+Blank Node Identifier: An RDF **blank node** identifier. In this context, it is used primarily as the graph name of a local RDF named graph.
+Content Hash (named graph): A cryptographic **hash** computed over the canonicalized representation of a named graph using RDF Dataset Canonicalization.
+RDF Stream: A stream of RDF data elements processed or interpreted as an ordered sequence over time.
+</pre>
 
 Introduction
 ============

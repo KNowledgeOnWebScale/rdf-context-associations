@@ -19,18 +19,14 @@ Markup Shorthands: markdown yes, css no
 <!-- [Skolemization](https://www.w3.org/TR/rdf11-mt/#skolemization-informative) -->
 ## Glossary
 
-
-
-| Term                      | Definition                                                                                                                                                        |
-|-------------------------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Context Association       | The association of contextual information to a **closed**, **local** target set of RDF statements encoded as a named graph. |
-| Context Statements        | The contextual statements (e.g., metadata, provenance, policy) of a context association that target a named graph in the local RDF scope. |
-| Named Graph               | An RDF 1.1 **named graph** (a set of triples identified by a graph name) used here to encapsulate target statements and keep their scope local.                   |
-| Blank Node Identifier     | An RDF **blank node** identifier, in this context mostly used as the name value of an RDF named graph.|
-| Content Hash (named graph)| A cryptographic **hash** of the canonicalized representation of a named graph, evaluated via RDF Dataset Canonicalization |
-| RDF Stream                | A stream of RDF data elements; see the W3C RDF Stream Processing Community Group for definitions and models.                                                      |
-
-
+| Term                       | Definition |
+|---------------------------|------------|
+| Context Association       | The association of contextual information with a **closed**, **local** set of RDF statements represented as a named graph. |
+| Context Statements        | The contextual statements of a context association, such as metadata, provenance, or policy, that target a named graph within the local RDF scope. |
+| Named Graph               | An RDF 1.1 **named graph**, that is, a set of RDF triples identified by a graph name. In this specification, it is used to encapsulate target statements and keep their scope local. |
+| Blank Node Identifier     | An RDF **blank node** identifier. In this context, it is used primarily as the graph name of a local RDF named graph. |
+| Content Hash (named graph) | A cryptographic **hash** computed over the canonicalized representation of a named graph using RDF Dataset Canonicalization. |
+| RDF Stream                | A stream of RDF data elements processed or interpreted as an ordered sequence over time. |
 
 Introduction
 ============

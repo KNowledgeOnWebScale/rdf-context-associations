@@ -137,7 +137,6 @@ Given an RDF dataset `D`:
 - If a named graph `(C, c)` contains an anchor triple `(c, ca:aboutGraph, t)`, then `C` defines a context association whose target graph is `(t, T)`.
 - The **target graph** is interpreted as `CT(T)`.
 - All triples in `CT(C)` are interpreted as **context statements** over `CT(T)`.
-- Context associations are **not transitive**. Any contextual relation should directly be indicated in the context graph.
 
 A context graph MAY itself be referenced as a target graph. In that case, its interpretation is still based on its content triples `CT(C)`.
 
@@ -148,7 +147,7 @@ A context graph MAY itself be referenced as a target graph. In that case, its in
 Examples (informative) {#examples}
 ==================================
 
-## Simple metadata about a data graph (N-Quads)
+## Simple metadata about a data graph 
 
 ```turtle
 _:dataG {

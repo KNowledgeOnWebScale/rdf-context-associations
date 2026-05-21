@@ -52,6 +52,9 @@ table th.last {
 </style>
 
 
+
+
+
 Introduction {#introduction}
 ===========================
 
@@ -178,6 +181,59 @@ _:sigG {
 }
 ```
 
+
+Querying to Context Associations
+================================
+
+Context Associations provide a uniformly queryable annotation method in RDF. 
+For a given target BGP, we can construct the associated context to this BGP as follows: 
+
+```sparql
+PREFIX ca: <https://w3id.org/context-associations#>
+PREFIX ex: <http://example.org/ns#>
+
+CONSTRUCT {
+  GRAPH ?source {
+    ?s ?p ?o
+  }
+}
+WHERE {
+
+  # 1. Find target graph(s) via BGP
+  GRAPH ?target {
+    { TARGET BGP }
+  }
+
+  # 2. Recursive closure over aboutGraph using the union graph
+  GRAPH <urn:x-arq:UnionGraph> {
+
+    # backward closure: source →* target
+    {
+      ?source ca:aboutGraph* ?target .
+    }
+
+    UNION
+
+    # forward closure: target →* source
+    {
+      ?target ca:aboutGraph* ?source .
+    }
+
+    UNION
+
+    # include target itself
+    {
+      BIND(?target AS ?source)
+    }
+  }
+
+  # 3. Extract full graph content
+  GRAPH ?source {
+    ?s ?p ?o
+  }
+}
+```
+
 Graph identifiers and exchange profiles {#identifiersandprofiles}
 =================================================================
 
@@ -202,11 +258,170 @@ the SPARQL Graph Store Protocol assumes IRI-addressable graphs over HTTP). [W3C]
     to prevent accidental or adversarial co-reference, while preserving the sender identifier via `ca:sourceGraphName`.
     
 
-Processing algorithm (normative)
+Encoding source annotation methods to Context Associations (normative)
+================================
+
+Note: The following algorithm makes the presumption that references to identifiers used as named graph identifiers can be interpreted as references to the contents of said named graph. In cases where this is not desired behavior, or contextual associations are linked through other means, step 3 of the following algorithm should be manually reviewed or utilize a different logic.
+
+For any input RDF Dataset `Dsource`, we generate the dataset `D` by replacing every Blank Node identifier `B` in `Dsource` by a newly minted skolem identifier `SkolemB`. From this, we build the resulting encoded dataset `D'` as follows:
+
+```
+# Step 1. Encode the default graph
+If the default graph of `D` is not empty:
+
+    Mint a new skolem identifier `Sdg`
+  
+    For all quads `q` of `D` with the default graph as graph term:
+
+        Add the quad `q.subject, q.predicate, q.object, Sdg` to `D'`
+
+    Add the quad `Sdg ca:originalName ca:DefaultGraph Sdg` to `D'`
+
+# Step 2. Encode named graphs
+For each graph term `G` in `D`:
+
+    Mint a new skolem identifier `Sng`
+
+    For all quads `q` with graph term `I`:
+
+        Add the quad `q.subject, q.predicate, q.object, Sng` to `D'`
+
+    Add the quad `Sng ca:originalName I Sng`
+
+
+# Step 3. Define context associations
+
+    For each graph term `G` in in `D'`:
+    
+        For each quad `q` with graph term `G`:
+        
+            If exists `X ca:originalName N X` in `D'`, where `sameTerm(q.subject, N)` OR `sameTerm(q.object, N)`:
+
+                Add the quad `G ca:aboutGraph X G` to `D'`
+
+    If we do not scope locally, output `D'`
+
+# Step 4. Local scoping (optional)
+
+    For each graph term `G` in `D'`:
+
+        Mint a blank node identifier `B`
+
+        For each quad `q` in `D'`:
+
+            if `sameTerm(q.graph, G)`:
+
+                if `sameTerm(q.predicate, ca:originalName)`:
+
+                    Add quad `B, q.predicate, q.object, B` 
+
+                else if `sameTerm(q.predicate, ca:aboutGraph)`: 
+                    
+                    Let `B'` be the blank node identifier minted for the graph term `G'` with `sameTerm(q.object, G')`:
+                        
+                        Add quad `B, q.predicate, B', B` 
+                
+                else:
+
+                    Add quad `q.subject, q.predicate, q.object, B` 
+
+```
+
+
+This can be achieved with the following ARQ query:
+
+```sparql
+PREFIX ca: <http://example.org/ca#>
+
+CONSTRUCT {
+  GRAPH ?Gid {
+    ?s ?p ?o .
+    ?Gid ca:originalName ?OriginalName .
+    ?Gid ca:aboutGraph ?TargetGid .
+  }
+}
+WHERE {
+
+  ########################################
+  # STEP A — global graph mapping (skolem IDs)
+  ########################################
+  {
+    SELECT DISTINCT ?G ?Gid ?OriginalName WHERE {
+
+      # Named graphs
+      {
+        GRAPH ?G { ?s ?p ?o }
+
+        BIND(IRI(CONCAT("urn:graph:", ENCODE_FOR_URI(STR(?G)))) AS ?Gid)
+        BIND(?G AS ?OriginalName)
+      }
+
+      UNION
+
+      # Default graph (only if non-empty)
+      {
+        ?s ?p ?o .
+        FILTER NOT EXISTS { GRAPH ?g { ?s ?p ?o } }
+
+        BIND("DEFAULT" AS ?G)
+        BIND(IRI("urn:graph:default") AS ?Gid)
+        BIND(ca:DefaultGraph AS ?OriginalName)
+      }
+    }
+  }
+
+  ########################################
+  # STEP B — assign triples to encoded graphs
+  ########################################
+  {
+    # Named graphs
+    {
+      GRAPH ?G { ?s ?p ?o }
+    }
+
+    UNION
+
+    # Default graph
+    {
+      ?s ?p ?o .
+      FILTER NOT EXISTS { GRAPH ?g { ?s ?p ?o } }
+      BIND("DEFAULT" AS ?G)
+    }
+  }
+
+  ########################################
+  # STEP C — context associations
+  ########################################
+  OPTIONAL {
+
+    # Find graph name N mentioned in triple
+    GRAPH ?N { ?nS ?nP ?nO }
+
+    FILTER (
+      sameTerm(?s, ?N) ||
+      sameTerm(?o, ?N)
+    )
+    
+    {
+      SELECT DISTINCT ?N ?TargetGid WHERE {
+        GRAPH ?N { ?x ?y ?z }
+
+        BIND(IRI(CONCAT("urn:graph:", ENCODE_FOR_URI(STR(?N)))) AS ?TargetGid)
+      }
+    }
+  }
+}
+```
+
+Note: The use of blank node identifiers with subqueries in SPARQL has undefined outcomes, leading to problematic behavior when processing. Hence the SPARQL conversion being constrained to steps 1 -> 3.
+
+
+Decoding Context Associations to their original dataset.
 ================================
 
 A conforming **CA processor** must implement the following:
 
+```
 1.  Parse the input as an RDF dataset.
     
 2.  For each named graph `C` with graph name `c`, find triples `(c, ca:aboutGraph, t)` **within `C`**.
@@ -217,7 +432,139 @@ A conforming **CA processor** must implement the following:
     
 5.  A processor must not assume that `t` is globally meaningful outside the dataset scope unless an application profile explicitly says so  
     (e.g., trusted skolem IDs).
-    
+```
 
 Note (informative): Applications that traverse context-association chains should avoid infinite recursion by tracking already-visited graph references.
 
+This can be achieved by a combination of two queries, a first one to reconstruct the default graph of the original dataset, and a second one to reconstruct the original named graphs:
+
+```sparql
+PREFIX ca: <https://w3id.org/context-associations#> 
+
+# Reconstructing the default graph
+CONSTRUCT {
+  ?s ?p ?o .
+}
+WHERE {
+  GRAPH ?G {
+    ?G ca:originalName ca:DefaultGraph .
+    ?s ?p ?o .
+  }
+
+  FILTER (
+    !sameTerm(?p, ca:originalName) &&
+    !sameTerm(?p, ca:aboutGraph)
+  )
+}
+```
+
+```sparql
+PREFIX ca: <https://w3id.org/context-associations#> 
+
+# Reconstructing the named graphs
+CONSTRUCT {
+  GRAPH ?name {
+    ?s ?p ?o .
+  }
+}
+WHERE {
+  GRAPH ?G {
+    ?G ca:originalName ?name .
+    ?s ?p ?o .
+  }
+
+  FILTER (
+    !sameTerm(?p, ca:originalName) &&
+    !sameTerm(?p, ca:aboutGraph) &&
+    !sameTerm(?name, ca:DefaultGraph)
+  )
+}
+```
+
+
+
+Appendix A: Considerations
+==================
+
+This section discusses some considerations as to why certain decisions were made.
+
+## Why named graphs instead of reification / rdf-star / triple terms 
+
+The choice for named graphs is both a pragmatic choice of choosing an existing RDF standard
+that should be supported in all RDF 1.1 compatible tooling, that provides inherent support of 
+annotating sets of triples instead of individual triples. 
+Where reification and triple terms can be modeled as part of a collection or other entity that 
+defines a selection of triples, these do not provide an inherent boundary within the RDF dataset, 
+but is fully reliant on the documentation of the approach to indicate the intended boundary of that
+collection entity. Named graphs does not suffer from this problem, and provides an inherent boundary 
+of its contained triples from the default graph and the other named graphs of an RDF dataset
+
+Additionally, both [Evaluation of Metadata Representations in RDF stores](https://www.semantic-web-journal.net/content/evaluation-metadata-representations-rdf-stores)
+as well as an unpublished paper from our side found that named graphs provide competitive performance 
+with other annotation methods.
+
+## Syntactic scope of the named graph
+
+There are two possible interpretations in which a referenced named graph can be interpreted in RDF,
+as the set of quads where the term equals the given graph name, or the set of triples found by 
+stripping the graph term from this set of quads. 
+
+To process a referenced graph as a set of triples, in a pass-by-value way, an unpacking of the named graph is required,
+such as using the `GRAPH` keyword in SPARQL to unpackage a named graph in triple graph, or in notation3 using graph terms.
+
+However, the core RDF specification does not provide such an unpacking mechanism. Therefore, in order to enforce working with the graph
+in a by-value approach, an approach such as SPARQL is required that allows both the use of the graph identifier and working with
+the unpackaged triples at the same time.
+
+<div class=example>
+```
+CONSTRUCT {
+    ?s ?p ?o.
+    ?g :issuer ?issuer.
+} WHERE {
+    GRAPH ?g {
+        ?s ?p ?o.
+    }
+    ?g :issuer ?issuer.
+}
+```
+</div>
+
+So unless a processing approach such as SPARQL can be enforced, the syntactic interpretation of named graphs must be constrained
+to its set of quads to retain consistency and functionality throughout the processing pipeline.
+
+## Semantic and syntactic interpretation of RDF named graphs
+
+The semantics of named graphs have had extensive discussion previously in the semantic web community,
+much of which has been collected in a document published by the RDF working group 
+[On Semantics of RDF Datasets](https://www.w3.org/TR/rdf11-datasets/).
+
+The evaluation of entailment regimes over RDF graphs is closely tied to the unpacking of said graphs
+in the RDF dataset. Therefore, it is left out of scope for this specification.
+
+## Working with remote references
+
+For practical purposes, we restrict the interpretation of graph references to local graphs. 
+This goes for blank nodes, dereferenceable URIs and non-dereferenceable URIs.
+
+The integration of remote graphs through the dereferencing requires a more holistic approach 
+that can resolve inconsistencies in the resulting dataset following a merge operation. 
+A similar approach can be seen with the use of `owl:imports` in Notation3 reasoning.
+
+
+<pre class=biblio>
+{
+  "carroll2005named": {
+    "href": "https://www.sciencedirect.com/science/article/pii/S1570826805000235",
+    "title": "Named graphs",
+    "authors": [
+        "Jeremy J. Carroll",
+        "Christian Bizer",
+        "Pat Hayes",
+        "Patrick Stickler"
+    ],
+    "publisher": "Journal of Web Semantics",
+    "date": "December 2005"
+  }
+}
+</pre>
